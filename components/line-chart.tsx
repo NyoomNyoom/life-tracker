@@ -28,7 +28,8 @@ type Props = {
 
 const PAD = { top: 12, right: 14, bottom: 26, left: 44 };
 
-function niceTicks(min: number, max: number, count = 4): number[] {
+/** Round tick values whose range always contains [min, max], so no point is drawn outside the plot. */
+export function niceTicks(min: number, max: number, count = 4): number[] {
   if (min === max) {
     min -= 1;
     max += 1;
@@ -37,8 +38,10 @@ function niceTicks(min: number, max: number, count = 4): number[] {
   const raw = span / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= count) ?? 10 * mag;
+  const start = Math.floor(min / step) * step;
+  const end = Math.ceil(max / step) * step;
   const ticks: number[] = [];
-  for (let t = Math.floor(min / step) * step; t <= max + step * 0.001; t += step) ticks.push(Math.round(t * 1000) / 1000);
+  for (let i = 0; start + i * step <= end + step * 1e-6; i++) ticks.push(Math.round((start + i * step) * 1000) / 1000);
   return ticks;
 }
 

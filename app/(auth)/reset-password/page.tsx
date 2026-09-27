@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-center text-[28px] font-bold tracking-tight">Choose a new password</h1>
-      <form action={action} className="space-y-4">
+      <form action={action} className="space-y-4 rounded-2xl bg-card p-4">
         <Field label="New password" hint="At least 8 characters.">
           <Input name="password" type="password" autoComplete="new-password" minLength={8} required />
         </Field>

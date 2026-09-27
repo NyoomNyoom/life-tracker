@@ -18,7 +18,7 @@ export function ForgotForm({ siteKey }: { siteKey?: string }) {
       {state?.message ? (
         <Notice tone="accent">{state.message}</Notice>
       ) : (
-        <form action={action} className="space-y-4">
+        <form action={action} className="space-y-4 rounded-2xl bg-card p-4">
           <Field label="Email">
             <Input name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} />
           </Field>

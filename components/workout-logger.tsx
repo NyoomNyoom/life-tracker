@@ -363,7 +363,7 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
           onChange={(e) => update((d) => ({ ...d, notes: e.target.value }))}
           placeholder="Notes (how it felt, what to change next time)"
           maxLength={2000}
-          className={cx(inputClass, "h-auto min-h-20 bg-card py-2.5")}
+          className={cx(inputClass.replace("bg-field", "bg-card"), "h-auto min-h-20 py-2.5")}
         />
         <Button type="button" size="lg" block onClick={finish} disabled={saving}>
           {saving ? "Saving…" : draft.pendingSync ? "Try saving again" : draft.mode === "new" ? "Finish workout" : "Save changes"}

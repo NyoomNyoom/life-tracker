@@ -31,7 +31,8 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     supabase.from("workouts").select("id, name, workout_date").gte("workout_date", addDays(today, -7 * 52)).order("workout_date"),
     supabase.from("routines").select("id, name").order("name").limit(4),
     supabase.from("todos").select("id, title, schedule, due_date, weekdays, month_day, active"),
-    supabase.from("todo_completions").select("todo_id, occurrence_date").gte("occurrence_date", addDays(today, -60)),
+    // All completions (not just recent ones): a one-off to-do finished months ago must not show as overdue.
+    supabase.from("todo_completions").select("todo_id, occurrence_date"),
     supabase.from("reminders").select("id, kind, label, time_of_day, weekdays, follow_up_minutes, created_at, todo_id, channel").eq("enabled", true),
     supabase.from("reminder_events").select("reminder_id, stage, delivered_via").eq("occurrence_date", today),
     supabase.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("user_id", userId),

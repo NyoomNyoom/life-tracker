@@ -4,7 +4,7 @@ import { WeightChart } from "@/components/weight-chart";
 import { WeightLogForm } from "@/components/weight-log-form";
 import { Card, CardHeader, EmptyState } from "@/components/ui";
 import { friendlyDate } from "@/lib/dates";
-import { formatWeight, inputValue } from "@/lib/units";
+import { formatWeight, inputValue, type Unit } from "@/lib/units";
 import { getViewer } from "@/lib/viewer";
 import { deleteWeight } from "./actions";
 
@@ -50,24 +50,48 @@ export default async function WeightPage() {
         {list.length === 0 ? (
           <EmptyState title="No weigh-ins yet" body="Log your first one above. Weighing at the same time each morning gives the cleanest trend." />
         ) : (
-          <ul className="divide-y divide-border">
-            {[...list].reverse().map((e) => (
-              <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <div className="text-[16px] font-medium tabular">{formatWeight(Number(e.weight_kg), unit)}</div>
-                  <div className="text-[13px] text-muted">{friendlyDate(e.entry_date, today)}</div>
-                </div>
-                <form action={deleteWeight}>
-                  <input type="hidden" name="id" value={e.id} />
-                  <button type="submit" className="p-2 text-faint active:text-danger" aria-label={`Delete entry for ${e.entry_date}`}>
-                    <Trash2 className="size-4" />
-                  </button>
-                </form>
-              </li>
-            ))}
-          </ul>
+          <>
+            <WeightHistory entries={[...list].reverse().slice(0, 14)} unit={unit} today={today} />
+            {list.length > 14 && (
+              <details className="group">
+                <summary className="cursor-pointer list-none px-4 py-3 text-center text-[15px] font-medium text-accent group-open:hidden">
+                  Show all {list.length} weigh-ins
+                </summary>
+                <WeightHistory entries={[...list].reverse().slice(14)} unit={unit} today={today} />
+              </details>
+            )}
+          </>
         )}
       </Card>
     </>
+  );
+}
+
+function WeightHistory({
+  entries,
+  unit,
+  today,
+}: {
+  entries: { id: string; entry_date: string; weight_kg: number }[];
+  unit: Unit;
+  today: string;
+}) {
+  return (
+    <ul className="divide-y divide-border border-t border-border first:border-t-0">
+      {entries.map((e) => (
+        <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
+          <div className="min-w-0 flex-1">
+            <div className="text-[16px] font-medium tabular">{formatWeight(Number(e.weight_kg), unit)}</div>
+            <div className="text-[13px] text-muted">{friendlyDate(e.entry_date, today)}</div>
+          </div>
+          <form action={deleteWeight}>
+            <input type="hidden" name="id" value={e.id} />
+            <button type="submit" className="p-2 text-faint active:text-danger" aria-label={`Delete entry for ${e.entry_date}`}>
+              <Trash2 className="size-4" />
+            </button>
+          </form>
+        </li>
+      ))}
+    </ul>
   );
 }

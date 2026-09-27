@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Dumbbell, ListChecks, Mail, Plus, Scale, Smartphone } from "lucide-react";
+import { Dumbbell, ListChecks, Plus, Scale } from "lucide-react";
 import { ReminderToggle } from "@/components/reminder-toggle";
 import { Card, CardHeader, EmptyState, LinkButton, Notice, PageHeader } from "@/components/ui";
 import { describeWeekdays, formatTimeOfDay } from "@/lib/dates";
@@ -67,10 +67,9 @@ export default async function RemindersPage() {
                     <span className="block text-[16px] font-medium">
                       {formatTimeOfDay(r.time_of_day)} · {r.label || (kind === "todo" ? r.todo?.title : TITLES[kind])}
                     </span>
-                    <span className="flex items-center gap-1 text-[13px] text-muted">
-                      {days} · {r.channel === "email" ? <Mail className="size-3" aria-hidden /> : <Smartphone className="size-3" aria-hidden />}
-                      {CHANNEL[r.channel as keyof typeof CHANNEL]}
-                      {r.follow_up_minutes ? ` · follow-up ${r.follow_up_minutes} min` : ""}
+                    <span className="block text-[13px] text-muted">
+                      {days} · {CHANNEL[r.channel as keyof typeof CHANNEL]}
+                      {r.follow_up_minutes ? ` · follow-up after ${r.follow_up_minutes} min` : ""}
                     </span>
                   </Link>
                   <ReminderToggle id={r.id} enabled={r.enabled} label={`${TITLES[kind]} reminder at ${formatTimeOfDay(r.time_of_day)}`} />

@@ -31,7 +31,7 @@ export function SignupForm({ siteKey }: { siteKey?: string }) {
   return (
     <div className="space-y-6">
       <h1 className="text-center text-[28px] font-bold tracking-tight">Create your account</h1>
-      <form action={action} className="space-y-4">
+      <form action={action} className="space-y-4 rounded-2xl bg-card p-4">
         <input type="hidden" name="timezone" value={timezone} />
         <Field label="Name" hint="Optional. Used to greet you.">
           <Input name="displayName" autoComplete="given-name" maxLength={60} />

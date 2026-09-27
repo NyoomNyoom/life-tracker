@@ -15,7 +15,7 @@ export function LoginForm({ next, siteKey, notice }: { next: string; siteKey?: s
     <div className="space-y-6">
       <h1 className="text-center text-[28px] font-bold tracking-tight">Welcome back</h1>
       {notice && <Notice>{notice}</Notice>}
-      <form action={action} className="space-y-4">
+      <form action={action} className="space-y-4 rounded-2xl bg-card p-4">
         <input type="hidden" name="next" value={next} />
         <Field label="Email">
           <Input name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} />

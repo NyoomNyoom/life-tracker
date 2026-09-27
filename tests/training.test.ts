@@ -99,3 +99,15 @@ describe("movingAverage", () => {
     expect(movingAverage(pts, 7).map((p) => p.value)).toEqual([80, 81, 90]);
   });
 });
+
+describe("niceTicks", async () => {
+  const { niceTicks } = await import("@/components/line-chart");
+  it("always spans the data so points are never clipped", () => {
+    for (const [lo, hi] of [[92.8, 96.8], [80.1, 86.9], [0, 1], [5, 5], [1234, 1299]]) {
+      const t = niceTicks(lo, hi);
+      expect(t[0]).toBeLessThanOrEqual(lo);
+      expect(t.at(-1)).toBeGreaterThanOrEqual(hi);
+      expect(t.length).toBeLessThanOrEqual(7);
+    }
+  });
+});
