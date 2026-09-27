@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/*
+  Design tokens. iOS-style grouped surfaces that follow the phone's light/dark setting.
+  Components use the semantic names (bg-bg, bg-card, text-muted, bg-accent...), never raw hex.
+*/
+:root {
+  color-scheme: light;
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --card-pressed: #e9e9ee;
+  --fg: #0b0b0c;
+  --muted: #6b6b73;
+  --faint: #a1a1aa;
+  --border: rgba(60, 60, 67, 0.16);
+  --field: #f4f4f6;
+  --accent: #16a34a;
+  --accent-strong: #15803d;
+  --accent-soft: rgba(22, 163, 74, 0.12);
+  --accent-fg: #ffffff;
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.1);
+  --warn: #b45309;
+  --warn-soft: rgba(217, 119, 6, 0.12);
+  --pr: #a16207;
+  --pr-soft: rgba(234, 179, 8, 0.18);
+
+  /* Charts (validated with the dataviz palette checker for both modes) */
+  --chart-surface: #ffffff;
+  --chart-grid: #e7e7ea;
+  --chart-trend: #16a34a;
+  --chart-raw: #2a78d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #000000;
+    --card: #1c1c1e;
+    --card-pressed: #2c2c2e;
+    --fg: #f5f5f7;
+    --muted: #9a9aa2;
+    --faint: #636369;
+    --border: rgba(84, 84, 88, 0.55);
+    --field: #2c2c2e;
+    --accent: #22c55e;
+    --accent-strong: #4ade80;
+    --accent-soft: rgba(34, 197, 94, 0.16);
+    --accent-fg: #03170a;
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.14);
+    --pr: #facc15;
+    --pr-soft: rgba(250, 204, 21, 0.16);
+
+    --chart-surface: #1c1c1e;
+    --chart-grid: #2f2f31;
+    --chart-trend: #16a34a;
+    --chart-raw: #3987e5;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card-pressed: var(--card-pressed);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-border: var(--border);
+  --color-field: var(--field);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-pr: var(--pr);
+  --color-pr-soft: var(--pr-soft);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* 16px minimum stops iOS Safari zooming into focused inputs. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,180 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { KINDS, MUSCLE_GROUPS, muscleLabel, type ExerciseLite, EXERCISE_COLUMNS } from "@/lib/exercises";
+import { createClient } from "@/lib/supabase/client";
+import type { ExerciseKind } from "@/lib/training";
+import { FormError, Sheet } from "./form-controls";
+import { Badge, Button, Field, Input, Select, cx } from "./ui";
+
+/** Searchable exercise list in a sheet, with inline creation of custom exercises. */
+export function ExercisePicker({
+  open,
+  onClose,
+  exercises,
+  userId,
+  onPick,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  exercises: ExerciseLite[];
+  userId: string;
+  onPick: (exercise: ExerciseLite) => void;
+  onCreated: (exercise: ExerciseLite) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [group, setGroup] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return exercises
+      .filter((e) => (!group || e.muscle_group === group) && (!q || e.name.toLowerCase().includes(q)))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [exercises, query, group]);
+
+  function pick(e: ExerciseLite) {
+    onPick(e);
+    setQuery("");
+    onClose();
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title="Add exercise">
+      <div className="sticky top-0 z-10 space-y-2 bg-bg px-4 pb-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" aria-hidden />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search exercises" className="pl-9" aria-label="Search exercises" />
+        </div>
+        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1">
+          {[{ value: null as string | null, label: "All" }, ...MUSCLE_GROUPS].map((g) => (
+            <button
+              key={g.label}
+              type="button"
+              onClick={() => setGroup(g.value)}
+              className={cx(
+                "h-8 shrink-0 rounded-full px-3 text-[14px] font-medium",
+                group === g.value ? "bg-accent text-accent-fg" : "bg-card text-muted",
+              )}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-4 pb-6">
+        {creating ? (
+          <CreateExerciseForm
+            userId={userId}
+            initialName={query}
+            initialGroup={group ?? "other"}
+            onCancel={() => setCreating(false)}
+            onCreated={(e) => {
+              onCreated(e);
+              setCreating(false);
+              pick(e);
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="mb-3 flex w-full items-center gap-2 rounded-xl bg-card px-4 py-3 text-left text-[16px] font-medium text-accent"
+          >
+            <Plus className="size-5" aria-hidden /> Create {query.trim() ? `“${query.trim()}”` : "a custom exercise"}
+          </button>
+        )}
+
+        <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card">
+          {filtered.map((e) => (
+            <li key={e.id}>
+              <button type="button" onClick={() => pick(e)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-card-pressed">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[16px]">{e.name}</span>
+                  <span className="block text-[13px] text-muted">{muscleLabel(e.muscle_group)}</span>
+                </span>
+                {e.user_id && <Badge>Custom</Badge>}
+              </button>
+            </li>
+          ))}
+          {filtered.length === 0 && <li className="px-4 py-6 text-center text-[14px] text-muted">No matches. Create it above.</li>}
+        </ul>
+      </div>
+    </Sheet>
+  );
+}
+
+function CreateExerciseForm({
+  userId,
+  initialName,
+  initialGroup,
+  onCancel,
+  onCreated,
+}: {
+  userId: string;
+  initialName: string;
+  initialGroup: string;
+  onCancel: () => void;
+  onCreated: (e: ExerciseLite) => void;
+}) {
+  const [name, setName] = useState(initialName.trim());
+  const [group, setGroup] = useState(initialGroup);
+  const [kind, setKind] = useState<ExerciseKind>(initialGroup === "cardio" ? "distance_time" : "weight_reps");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    if (!name.trim()) return setError("Give it a name.");
+    setBusy(true);
+    setError(null);
+    const { data, error } = await createClient()
+      .from("exercises")
+      .insert({ user_id: userId, name: name.trim(), muscle_group: group, kind })
+      .select(EXERCISE_COLUMNS)
+      .single();
+    setBusy(false);
+    if (error) {
+      setError(error.code === "23505" ? "You already have an exercise with that name." : error.message);
+      return;
+    }
+    onCreated(data as ExerciseLite);
+  }
+
+  return (
+    <div className="mb-4 space-y-3 rounded-xl bg-card p-4">
+      <Field label="Name">
+        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} autoFocus />
+      </Field>
+      <Field label="Muscle group">
+        <Select value={group} onChange={(e) => setGroup(e.target.value)}>
+          {MUSCLE_GROUPS.map((g) => (
+            <option key={g.value} value={g.value}>
+              {g.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="What you record" hint={KINDS.find((k) => k.value === kind)?.hint}>
+        <Select value={kind} onChange={(e) => setKind(e.target.value as ExerciseKind)}>
+          {KINDS.map((k) => (
+            <option key={k.value} value={k.value}>
+              {k.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <FormError message={error} />
+      <div className="flex gap-2">
+        <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
+          Cancel
+        </Button>
+        <Button type="button" onClick={save} disabled={busy} className="flex-1">
+          {busy ? "Saving…" : "Create"}
+        </Button>
+      </div>
+    </div>
+  );
+}
