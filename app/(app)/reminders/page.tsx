@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Dumbbell, ListChecks, Plus, Scale } from "lucide-react";
+import { Dumbbell, ListChecks, Plus, Scale, Smile } from "lucide-react";
 import { ReminderToggle } from "@/components/reminder-toggle";
 import { Card, CardHeader, EmptyState, LinkButton, Notice, PageHeader } from "@/components/ui";
 import { describeWeekdays, formatTimeOfDay } from "@/lib/dates";
@@ -9,8 +9,8 @@ import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Reminders" };
 
-const ICONS = { weight: Scale, workout: Dumbbell, todo: ListChecks };
-const TITLES = { weight: "Weigh-in", workout: "Gym day", todo: "To-do" };
+const ICONS = { weight: Scale, workout: Dumbbell, todo: ListChecks, teeth: Smile };
+const TITLES = { weight: "Weigh-in", workout: "Gym day", todo: "To-do", teeth: "Brush teeth" };
 const CHANNEL = { push: "Notification", email: "Email", both: "Notification + email" };
 
 export default async function RemindersPage() {
@@ -37,12 +37,15 @@ export default async function RemindersPage() {
         </div>
       )}
 
-      <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
+      <div className="mx-4 mb-4 grid grid-cols-3 gap-2">
         <LinkButton href="/reminders/new?kind=weight" variant="secondary">
           <Plus className="size-4" aria-hidden /> Weigh-in
         </LinkButton>
         <LinkButton href="/reminders/new?kind=workout" variant="secondary">
           <Plus className="size-4" aria-hidden /> Gym day
+        </LinkButton>
+        <LinkButton href="/reminders/new?kind=teeth" variant="secondary">
+          <Plus className="size-4" aria-hidden /> Brushing
         </LinkButton>
       </div>
 
@@ -65,7 +68,7 @@ export default async function RemindersPage() {
                   <Icon className="size-5 shrink-0 text-accent" aria-hidden />
                   <Link href={href} className="min-w-0 flex-1">
                     <span className="block text-[16px] font-medium">
-                      {formatTimeOfDay(r.time_of_day)} · {r.label || (kind === "todo" ? r.todo?.title : TITLES[kind])}
+                      {formatTimeOfDay(r.time_of_day)} · {r.label || (kind === "todo" ? r.todo?.title : kind === "teeth" ? `${TITLES.teeth} (${r.teeth_slot})` : TITLES[kind])}
                     </span>
                     <span className="block text-[13px] text-muted">
                       {days} · {CHANNEL[r.channel as keyof typeof CHANNEL]}

@@ -96,7 +96,9 @@ export default async function TrainPage() {
 
       <Card>
         <List>
+          <ListRow href="/challenges" title="Distance challenges" subtitle="Every km you log moves you along a route" />
           <ListRow href="/exercises" title="Exercises & progress" subtitle="Personal bests and charts for every lift" />
+          <ListRow href="/achievements" title="Medals & badges" />
         </List>
       </Card>
     </>

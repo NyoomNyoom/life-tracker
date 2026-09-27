@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, CheckCircle2, Dumbbell, Flame, ListChecks, Play, Scale } from "lucide-react";
+import { Bell, CheckCircle2, Dumbbell, Flame, ListChecks, Play, Route, Scale, Smile } from "lucide-react";
+import { ChallengeCard } from "@/components/challenge-card";
 import { InstallHint } from "@/components/install-hint";
 import { PendingWorkoutBanner } from "@/components/pending-workout-banner";
 import { ReminderSkip } from "@/components/reminder-skip";
 import { Sparkline } from "@/components/sparkline";
+import { TeethTracker } from "@/components/teeth-tracker";
 import { TodoCheck } from "@/components/todo-check";
 import { Badge, Card, CardHeader, LinkButton, Notice } from "@/components/ui";
 import { WeightLogForm } from "@/components/weight-log-form";
 import { addDays, formatTimeOfDay, nowIn, parseISODate } from "@/lib/dates";
+import { loadChallenges } from "@/lib/challenge-data";
+import { brushingStats, type BrushLog } from "@/lib/habits";
 import { appliesOn, dueInstant, type ReminderKind } from "@/lib/reminders/engine";
 import { isOverdue, occursOn } from "@/lib/todos";
 import { movingAverage, weeklyStats } from "@/lib/training";
@@ -23,20 +27,27 @@ function greeting(hour: number) {
 
 export default async function TodayPage({ searchParams }: { searchParams: Promise<{ password?: string }> }) {
   const { password } = await searchParams;
-  const { supabase, userId, profile, unit, today } = await getViewer();
+  const viewer = await getViewer();
+  const { supabase, userId, profile, unit, today } = viewer;
   const now = nowIn(profile.timezone);
 
-  const [weights, workouts, routines, todos, completions, reminders, events, devices] = await Promise.all([
+  const [weights, workouts, routines, todos, completions, reminders, events, devices, brushing, challenges] = await Promise.all([
     supabase.from("weight_entries").select("entry_date, weight_kg").gte("entry_date", addDays(today, -60)).order("entry_date"),
     supabase.from("workouts").select("id, name, workout_date").gte("workout_date", addDays(today, -7 * 52)).order("workout_date"),
     supabase.from("routines").select("id, name").order("name").limit(4),
     supabase.from("todos").select("id, title, schedule, due_date, weekdays, month_day, active"),
     // All completions (not just recent ones): a one-off to-do finished months ago must not show as overdue.
     supabase.from("todo_completions").select("todo_id, occurrence_date"),
-    supabase.from("reminders").select("id, kind, label, time_of_day, weekdays, follow_up_minutes, created_at, todo_id, channel").eq("enabled", true),
+    supabase.from("reminders").select("id, kind, label, time_of_day, weekdays, follow_up_minutes, created_at, todo_id, channel, teeth_slot").eq("enabled", true),
     supabase.from("reminder_events").select("reminder_id, stage, delivered_via").eq("occurrence_date", today),
     supabase.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabase.from("brushing_logs").select("log_date, slot, flossed, mouthwash").gte("log_date", addDays(today, -400)),
+    loadChallenges(viewer),
   ]);
+
+  // Teeth
+  const brush = brushingStats((brushing.data ?? []) as BrushLog[], today);
+  const activeChallenges = challenges.joined.filter((j) => !j.progress.complete);
 
   // Weight
   const weightList = (weights.data ?? []).map((w) => ({ date: w.entry_date, value: Number(w.weight_kg) }));
@@ -66,11 +77,19 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     .map((r) => {
       const ev = eventsFor(r.id);
       const done =
-        r.kind === "weight" ? !!todayWeight : r.kind === "workout" ? todaysWorkouts.length > 0 : doneOn.has(`${r.todo_id}|${today}`);
+        r.kind === "weight"
+          ? !!todayWeight
+          : r.kind === "workout"
+            ? todaysWorkouts.length > 0
+            : r.kind === "teeth"
+              ? Boolean(r.teeth_slot === "morning" ? brush.today.morning : brush.today.night)
+              : doneOn.has(`${r.todo_id}|${today}`);
       const skipped = ev.some((e) => e.stage === "dismissed");
       const sent = ev.find((e) => e.stage === "follow_up") ?? ev.find((e) => e.stage === "initial");
       const status = done ? "done" : skipped ? "skipped" : sent ? "sent" : dueInstant(r, today, profile.timezone) <= now ? "due" : "upcoming";
-      const title = r.label || (r.kind === "weight" ? "Weigh in" : r.kind === "workout" ? "Gym day" : (r.todo?.title ?? "To-do"));
+      const title =
+        r.label ||
+        (r.kind === "weight" ? "Weigh in" : r.kind === "workout" ? "Gym day" : r.kind === "teeth" ? `Brush teeth (${r.teeth_slot})` : (r.todo?.title ?? "To-do"));
       return { ...r, status, title };
     })
     .sort((a, b) => a.time_of_day.localeCompare(b.time_of_day));
@@ -125,6 +144,21 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
         </div>
       </Card>
 
+      {/* Teeth */}
+      <Card>
+        <CardHeader
+          title="Teeth"
+          icon={<Smile className="size-4" aria-hidden />}
+          action={
+            <Link href="/teeth" className="flex items-center gap-1 text-[14px] font-medium text-accent">
+              {brush.streak > 0 && <Flame className="size-4 text-warn" aria-hidden />}
+              {brush.streak > 0 ? `${brush.streak}-day streak` : "History"}
+            </Link>
+          }
+        />
+        <TeethTracker date={today} day={brush.today} />
+      </Card>
+
       {/* Training */}
       <Card>
         <CardHeader title="Training" icon={<Dumbbell className="size-4" aria-hidden />} />
@@ -169,6 +203,33 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
             </div>
           )}
         </div>
+      </Card>
+
+      {/* Challenges */}
+      <Card>
+        <CardHeader
+          title="Challenges"
+          icon={<Route className="size-4" aria-hidden />}
+          action={
+            <Link href="/challenges" className="text-[14px] font-medium text-accent">
+              {activeChallenges.length ? "All" : "Browse"}
+            </Link>
+          }
+        />
+        {activeChallenges.length ? (
+          <div className="divide-y divide-border pb-1">
+            {activeChallenges.slice(0, 2).map((j) => (
+              <ChallengeCard key={j.challenge.slug} entry={j} unit={unit} />
+            ))}
+          </div>
+        ) : (
+          <p className="px-4 pb-4 text-[15px] text-muted">
+            Walk the length of New Zealand or take the Ring to Mordor, one logged km at a time.{" "}
+            <Link href="/challenges" className="font-semibold text-accent">
+              Start a challenge
+            </Link>
+          </p>
+        )}
       </Card>
 
       {/* To-dos */}

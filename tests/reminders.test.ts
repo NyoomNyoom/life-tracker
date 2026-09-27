@@ -122,3 +122,16 @@ describe("buildMessage", () => {
     expect(buildMessage("workout", "follow_up", null, null).path).toBe("/workouts/new");
   });
 });
+
+describe("teeth reminders", () => {
+  it("apply on their weekdays like weigh-ins", () => {
+    const r = rule({ kind: "teeth", time_of_day: "21:30", weekdays: [1, 2, 3, 4, 5, 6, 7] });
+    expect(findDue(r, NZ, at("2026-09-28T21:31", NZ), [])).toEqual({ occurrenceDate: "2026-09-28", stage: "initial" });
+  });
+
+  it("word morning and night reminders differently and open the teeth page", () => {
+    expect(buildMessage("teeth", "initial", null, null, "morning")).toMatchObject({ title: "Brush your teeth", path: "/teeth" });
+    expect(buildMessage("teeth", "initial", null, null, "night").title).toBe("Time to brush");
+    expect(buildMessage("teeth", "follow_up", null, null, "night").body).toContain("streak");
+  });
+});

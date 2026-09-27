@@ -50,6 +50,10 @@ export async function GET(request: NextRequest) {
         (done ?? []).filter((d) => d.todo_id === t.id).map((d) => d.occurrence_date).sort().join(" "),
       ]),
     );
+  } else if (type === "teeth") {
+    const { data, error } = await supabase.from("brushing_logs").select("log_date, slot, flossed, mouthwash, logged_at").order("log_date").order("slot");
+    if (error) return new Response(error.message, { status: 500 });
+    csv = toCsv(["date", "slot", "flossed", "mouthwash", "logged_at"], data.map((r) => [r.log_date, r.slot, r.flossed, r.mouthwash, r.logged_at]));
   } else {
     return new Response("Unknown export type", { status: 400 });
   }

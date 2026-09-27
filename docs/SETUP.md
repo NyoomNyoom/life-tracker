@@ -51,7 +51,9 @@ Either:
   npx supabase link --project-ref <your-project-ref>   # the ref is in the dashboard URL
   npx supabase db push                                  # applies supabase/migrations/*
   ```
-- **Or by hand:** open **SQL Editor** and run the three files in `supabase/migrations/` in filename order.
+- **Or by hand:** open **SQL Editor** and run every file in `supabase/migrations/`, in filename order.
+
+When you pull a new version of the app later, run `npx supabase db push` again (or run just the new migration files) before or right after deploying.
 
 ### 4.3 Copy the API keys
 **Project Settings → API Keys** (and **Data API** for the URL):

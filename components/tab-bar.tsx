@@ -7,10 +7,10 @@ import { cx } from "./ui";
 
 const TABS = [
   { href: "/", label: "Today", icon: House, match: (p: string) => p === "/" },
-  { href: "/workouts", label: "Train", icon: Dumbbell, match: (p: string) => /^\/(workouts|routines|exercises)/.test(p) },
+  { href: "/workouts", label: "Train", icon: Dumbbell, match: (p: string) => /^\/(workouts|routines|exercises|challenges)/.test(p) },
   { href: "/weight", label: "Weight", icon: Scale, match: (p: string) => p.startsWith("/weight") },
   { href: "/todos", label: "To-dos", icon: ListChecks, match: (p: string) => p.startsWith("/todos") },
-  { href: "/more", label: "More", icon: Ellipsis, match: (p: string) => /^\/(more|settings|reminders)/.test(p) },
+  { href: "/more", label: "More", icon: Ellipsis, match: (p: string) => /^\/(more|settings|reminders|teeth|achievements)/.test(p) },
 ];
 
 export function TabBar() {

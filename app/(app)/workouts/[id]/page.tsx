@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Trophy } from "lucide-react";
+import { Celebration } from "@/components/celebration";
 import { ConfirmButton } from "@/components/confirm-button";
 import { Badge, Card, LinkButton, Notice, PageHeader } from "@/components/ui";
 import { friendlyDate } from "@/lib/dates";
@@ -11,8 +12,14 @@ import { deleteWorkout } from "../actions";
 
 export const metadata: Metadata = { title: "Workout" };
 
-export default async function WorkoutPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> }) {
-  const [{ id }, { saved }] = await Promise.all([params, searchParams]);
+export default async function WorkoutPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ saved?: string; earned?: string }>;
+}) {
+  const [{ id }, { saved, earned }] = await Promise.all([params, searchParams]);
   const { supabase, unit, today } = await getViewer();
   const { data: workout } = await supabase
     .from("workouts")
@@ -54,6 +61,8 @@ export default async function WorkoutPage({ params, searchParams }: { params: Pr
           </Notice>
         </div>
       )}
+
+      {earned && <Celebration keys={earned.split(",")} />}
 
       {groups.size === 0 && (
         <Card className="px-4 py-5 text-[15px] text-muted">Logged as a gym visit with no sets.</Card>

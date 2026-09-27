@@ -1,6 +1,6 @@
 # Life Tracker: design
 
-A private, installable web app for tracking gym sessions, body weight and to-dos, which nudges you by push notification or email when you haven't done something by a set time.
+A private, installable web app for tracking gym sessions, body weight, teeth brushing and to-dos, with distance challenges and medals, which nudges you by push notification or email when you haven't done something by a set time.
 
 ## Decisions
 
@@ -20,7 +20,12 @@ These were settled up front. The reasoning is kept so future changes can revisit
 | Nagging | One reminder + one optional follow-up; "skip today" | Useful without being spammy, and friendly to the email quota |
 | Channels | Per reminder: push / email / both; push falls back to email | Nothing is silently lost if a phone never enabled notifications |
 | Scheduler | Supabase `pg_cron` every 5 min → `POST /api/cron/reminders` | Vercel Hobby cron runs at most once a day, which is useless for "by 9:00" |
-| Other trackers | Not yet; kept easy to add | Ship the core well first |
+| Other trackers | Teeth brushing (added in round 2); others kept easy to add | Ship the core well first |
+| Brushing | Morning + night check-ins, each with optional floss and mouthwash; a day is complete when both are brushed | Matches twice-a-day brushing, and lets a night reminder target the night slot |
+| Distance challenges | Virtual journeys (Te Araroa, the Walk to Mordor, Milford Track, Tongariro Crossing, Marathon) with checkpoints and a finisher's medal | Like The Conqueror challenges: long goals broken into reachable ones |
+| What counts | Every workout set with a distance (walk, hike, run, ride, row, swim) | "A workout that is done over a distance" |
+| Joining | Join to start; distance from workouts dated that day onwards counts; several at once, each getting the full distance | A journey starts when you choose, and doesn't count old workouts |
+| Incentives | Medals + checkpoints; brushing and flossing streak badges; workout-count, weekly-streak and first-PR badges; a push when you pass a checkpoint | Asked for in round 2 |
 | Extras | Charts, PRs, weekly streaks, rest timer, CSV export, account deletion | Asked for in the design interview |
 
 ## Architecture
@@ -76,6 +81,9 @@ All weights are kg, distances metres, durations seconds. "Local" dates are `date
 | `reminders` | Rules: kind, local time, weekdays, channel, follow-up | `kind = 'todo'` links one-to-one to a to-do and follows its schedule |
 | `reminder_events` | What was sent (or skipped) per reminder, day and stage | `unique (reminder_id, occurrence_date, stage)` is the lock that prevents double-sends |
 | `push_subscriptions` | One per device with notifications on | Deleted automatically when the push service says the device is gone |
+| `brushing_logs` | One row per brushed slot (`morning` / `night`) per local day, with `flossed` and `mouthwash` | Deleting the row un-ticks the slot |
+| `challenge_entries` | Which challenges you've joined, from which local date, and when you finished | The routes themselves live in `lib/challenges.ts`; `challenge_distances()` sums distance per entry |
+| `achievements` | Every badge, checkpoint and medal earned, with when | Insert-only for users (no updates or deletes), keyed by stable strings from `lib/achievements.ts` |
 
 **Security model.** Every table has RLS: you can only see and change rows where `user_id` is you. Child tables use composite foreign keys (`(workout_id, user_id) → workouts(id, user_id)`), so a row can't point at another user's parent. Rows that reference an exercise also check you're allowed to use it. The anonymous role has no table access at all. These properties were tested by simulating two users in SQL (overwriting, reading, dismissing and referencing across accounts all fail).
 
@@ -95,6 +103,12 @@ Every 5 minutes, `pg_cron` calls `POST /api/cron/reminders` with `Authorization:
 5. **Delivers**: push to every device, deleting dead subscriptions on 404/410. Then email if the channel asks for it, or as a fallback when a push-only reminder reached no device. Emails include a signed, 48-hour "dismiss for today" link. It needs a tap (a POST) so email link scanners can't trigger it.
 6. Records `delivered_via` / `error` on the event, and returns a JSON summary that shows up in `net._http_response`.
 
+## Teeth, challenges and achievements
+
+- **Teeth.** The Today tab and `/teeth` have a morning and a night check-in, each with Floss and Mouthwash. Ticking an extra also ticks the brush. `lib/habits.ts` computes streaks: complete days in a row, counting today only once it's complete, so an unfinished evening never breaks the streak early. A `teeth` reminder targets one slot and is skipped if that slot is already ticked.
+- **Challenges.** `lib/challenges.ts` holds each route: total distance, checkpoints (the last is the finish), medal colours, and whether distances are approximate. The Middle-earth and Te Araroa figures are estimates and are labelled as such in the app. Distance can come from any workout set with a distance, including the quick "log a walk, hike, run or ride" form on `/challenges`. Joining counts distance from workouts dated that day onwards. The finish estimate uses your pace since joining (up to the last 30 days) and only appears after a week.
+- **Achievements.** `evaluateAchievements()` (`lib/achievements-server.ts`) runs after every workout save, quick log, brush tick and challenge join. It recomputes what you qualify for with the pure `qualifyingKeys()`, inserts anything new (the primary key makes it idempotent) and marks finished challenges complete. It sends up to three pushes for new checkpoints or medals, unless you've turned that off in Settings. New keys come back to the page, which shows a celebration. Achievements are never revoked, even if you delete the workout that earned them.
+
 ## Workout logging and offline
 
 - The draft (`lib/workout-draft.ts`) is stored in `localStorage` on every keystroke, keyed per user (and per workout when editing). Inputs are kept as typed strings in your unit and converted only on save.
@@ -108,7 +122,7 @@ iOS-style grouped surfaces and one green accent, following the phone's light/dar
 
 ## Testing
 
-- `npm test`: 40 unit tests for units, 1RM/PR logic, streaks, to-do schedules, the reminder engine (timezones, DST, grace window, follow-ups), signed links and CSV.
+- `npm test`: 59 unit tests for units, 1RM/PR logic, streaks, to-do schedules, the reminder engine (timezones, DST, grace window, follow-ups, brushing), brushing streaks, the challenge catalog and progress, achievement rules, signed links and CSV.
 - The initial build was also checked end to end against a local Supabase stack (in a real browser at iPhone size):
   - Sign-up → confirmation email → routine → workout with PRs → reload survives → offline save → auto-upload → to-dos → reminders → CSV
   - The dispatcher with a fake push service and fake Resend: push payloads decrypted and checked, dead devices removed, email fallback, no duplicates, follow-up, dismiss link
@@ -121,6 +135,8 @@ iOS-style grouped surfaces and one green accent, following the phone's light/dar
 2. Add `app/(app)/sleep/` (page + `actions.ts`), reusing `LineChart` and the form components.
 3. For reminders: add `'sleep'` to the `reminders.kind` check, a case in `buildMessage()`, and a "done today" query in `findAlreadyDone()`.
 4. Link it from the More tab, or give it its own tab.
+
+**Adding a challenge:** append an entry to `CHALLENGES` in `lib/challenges.ts` (checkpoint ids are permanent once shipped; the last checkpoint must be `finish` at the total distance). `tests/challenges.test.ts` checks the catalog's consistency and that long routes have a checkpoint at least every 350 km.
 
 Ideas that fit the current design: passkey sign-in (Supabase now supports it), a home-screen widget-style summary, plate calculator, body-measurement tracking, and a weekly email digest.
 

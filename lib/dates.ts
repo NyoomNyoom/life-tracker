@@ -11,6 +11,12 @@ export function todayIn(timezone: string): string {
   return nowIn(timezone).toISODate()!;
 }
 
+/** The local calendar date (YYYY-MM-DD) of an instant, e.g. when an achievement was awarded. */
+export function localDateOf(iso: string, timezone: string): string {
+  const dt = DateTime.fromISO(iso).setZone(timezone);
+  return (dt.isValid ? dt : DateTime.fromISO(iso).toUTC()).toISODate()!;
+}
+
 export function parseISODate(date: string): DateTime {
   return DateTime.fromISO(date, { zone: "UTC" });
 }
@@ -87,4 +93,16 @@ export function parseDuration(raw: string): number | null {
   const parts = raw.trim().split(":").map((p) => p.trim());
   if (parts.length === 0 || parts.length > 3 || parts.some((p) => p === "" || !/^\d+$/.test(p))) return null;
   return parts.map(Number).reduce((acc, n) => acc * 60 + n, 0);
+}
+
+/**
+ * Parses a walk/run duration where hours are the natural unit: "45" = 45 min, "1:30" = 1 h 30 min,
+ * "1:05:30" = 1 h 5 min 30 s. (The set logger's parseDuration reads "1:30" as 1 min 30 s instead.)
+ */
+export function parseOutingDuration(raw: string): number | null {
+  const parts = raw.trim().split(":").map((p) => p.trim());
+  if (parts.length === 0 || parts.length > 3 || parts.some((p) => !/^\d+$/.test(p))) return null;
+  const [a, b = "0", c = "0"] = parts.map(String);
+  if (parts.length === 1) return Number(a) * 60;
+  return Number(a) * 3600 + Number(b) * 60 + (parts.length === 3 ? Number(c) : 0);
 }

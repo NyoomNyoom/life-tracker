@@ -31,6 +31,7 @@ type DueItem = {
   label: string | null;
   todoId: string | null;
   todoTitle: string | null;
+  teethSlot: "morning" | "night" | null;
   email: string;
   occurrenceDate: string;
   stage: Stage;
@@ -51,7 +52,7 @@ export async function dispatchReminders(now: DateTime = DateTime.utc()): Promise
   const { data: rules, error: rulesError } = await db
     .from("reminders")
     .select(
-      "id, user_id, kind, label, time_of_day, weekdays, channel, follow_up_minutes, created_at, todo_id, " +
+      "id, user_id, kind, label, time_of_day, weekdays, channel, follow_up_minutes, created_at, todo_id, teeth_slot, " +
         "todo:todos(title, schedule, due_date, weekdays, month_day, active), profile:profiles(timezone, email)",
     )
     .eq("enabled", true)
@@ -67,6 +68,7 @@ export async function dispatchReminders(now: DateTime = DateTime.utc()): Promise
         follow_up_minutes: number | null;
         created_at: string;
         todo_id: string | null;
+        teeth_slot: "morning" | "night" | null;
         todo: { title: string; schedule: string; due_date: string | null; weekdays: number[] | null; month_day: number | null; active: boolean } | null;
         profile: { timezone: string; email: string } | null;
       }[]
@@ -115,6 +117,7 @@ export async function dispatchReminders(now: DateTime = DateTime.utc()): Promise
         label: rule.label,
         todoId: rule.todo_id,
         todoTitle: rule.todo?.title ?? null,
+        teethSlot: rule.teeth_slot,
         email: rule.profile.email,
         occurrenceDate: hit.occurrenceDate,
         stage: hit.stage,
@@ -169,8 +172,10 @@ export async function dispatchReminders(now: DateTime = DateTime.utc()): Promise
   return summary;
 }
 
-function doneKey(d: Pick<DueItem, "kind" | "userId" | "todoId" | "occurrenceDate">) {
-  return `${d.kind}|${d.kind === "todo" ? d.todoId : d.userId}|${d.occurrenceDate}`;
+function doneKey(d: Pick<DueItem, "kind" | "userId" | "todoId" | "teethSlot" | "occurrenceDate">) {
+  if (d.kind === "todo") return `todo|${d.todoId}|${d.occurrenceDate}`;
+  if (d.kind === "teeth") return `teeth|${d.userId}|${d.occurrenceDate}|${d.teethSlot}`;
+  return `${d.kind}|${d.userId}|${d.occurrenceDate}`;
 }
 
 /** Which due items are already satisfied (weight logged, workout logged, to-do ticked off). */
@@ -199,6 +204,13 @@ async function findAlreadyDone(db: ReturnType<typeof createAdminClient>, due: Du
     data.forEach((r) => done.add(`todo|${r.todo_id}|${r.occurrence_date}`));
   }
 
+  const teethUsers = [...new Set(due.filter((d) => d.kind === "teeth").map((d) => d.userId))];
+  if (teethUsers.length) {
+    const { data, error } = await db.from("brushing_logs").select("user_id, log_date, slot").in("user_id", teethUsers).in("log_date", dates);
+    if (error) throw new Error(`Checking brushing failed: ${error.message}`);
+    data.forEach((r) => done.add(`teeth|${r.user_id}|${r.log_date}|${r.slot}`));
+  }
+
   return done;
 }
 
@@ -207,7 +219,7 @@ async function deliver(
   item: DueItem,
   subs: { id: string; endpoint: string; p256dh: string; auth: string }[],
 ): Promise<{ deliveredVia: string[]; errors: string[] }> {
-  const message = buildMessage(item.kind, item.stage, item.label, item.todoTitle);
+  const message = buildMessage(item.kind, item.stage, item.label, item.todoTitle, item.teethSlot);
   const deliveredVia: string[] = [];
   const errors: string[] = [];
 

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, CloudOff, Ellipsis, Plus, Timer, Trash2, Trophy } from "lucide-react";
 import { formatDuration } from "@/lib/dates";
 import type { ExerciseLite } from "@/lib/exercises";
+import { afterWorkoutSaved } from "@/app/(app)/workouts/actions";
 import { createClient } from "@/lib/supabase/client";
 import { EMPTY_BESTS, estimate1RM, type SetValues } from "@/lib/training";
 import { formatWeight, type Unit } from "@/lib/units";
@@ -213,9 +214,9 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
       setSaving(true);
       const payload = buildPayload(d, unit, computePRs(d, snapshots, unit), d.endedAt);
       const { error } = await createClient().rpc("save_workout", { p_workout: payload.workout, p_sets: payload.sets });
-      savingRef.current = false;
-      setSaving(false);
       if (error) {
+        savingRef.current = false;
+        setSaving(false);
         if (isNetworkError(error.message)) {
           setOffline(true);
           return;
@@ -233,7 +234,9 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
       try {
         localStorage.removeItem(storageKey);
       } catch {}
-      router.replace(`/workouts/${payload.workout.id}?saved=1`);
+      // Badges, checkpoints and medals are a bonus: never let them block leaving the logger.
+      const earned = await afterWorkoutSaved().catch(() => [] as string[]);
+      router.replace(`/workouts/${payload.workout.id}?saved=1${earned.length ? `&earned=${earned.join(",")}` : ""}`);
       router.refresh();
     },
     [router, snapshots, storageKey, unit],

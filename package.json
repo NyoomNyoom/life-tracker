@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm run test",
-    "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
+    "db:types": "npx --yes supabase gen types typescript --local > lib/supabase/database.types.ts",
     "icons": "node scripts/generate-icons.mjs",
     "vapid": "web-push generate-vapid-keys"
   },

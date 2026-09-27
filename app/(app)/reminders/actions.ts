@@ -11,7 +11,9 @@ export async function saveReminder(_prev: ActionResult, formData: FormData): Pro
   if (!viewer) return { ok: false, error: "You've been signed out. Sign in again." };
 
   const id = z.uuid().safeParse(formData.get("id")).data;
-  const kind = z.enum(["weight", "workout"]).safeParse(formData.get("kind"));
+  const kind = z.enum(["weight", "workout", "teeth"]).safeParse(formData.get("kind"));
+  const teethSlot = z.enum(["morning", "night"]).safeParse(formData.get("teeth_slot")).data ?? null;
+  if (kind.data === "teeth" && !teethSlot) return { ok: false, error: "Pick morning or night." };
   if (!id && !kind.success) return { ok: false, error: "Unknown reminder type." };
 
   const fields = readReminderFields(formData);
@@ -26,6 +28,7 @@ export async function saveReminder(_prev: ActionResult, formData: FormData): Pro
     channel: fields.data.channel,
     follow_up_minutes: fields.data.follow_up_minutes || null,
     enabled: formData.get("enabled") !== "off",
+    ...(teethSlot ? { teeth_slot: teethSlot } : {}),
   };
 
   const { error } = id

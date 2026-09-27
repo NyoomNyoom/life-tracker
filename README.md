@@ -1,6 +1,6 @@
 # Life Tracker
 
-A private web app you install on your iPhone's Home Screen to track **gym sessions**, **body weight** and **to-dos**. It **reminds you by notification or email** when you haven't logged something by a time you choose.
+A private web app you install on your iPhone's Home Screen to track **gym sessions**, **body weight**, **teeth brushing** and **to-dos**, and to walk virtual routes like **the length of New Zealand** or **the road to Mordor** with the distance you log. It **reminds you by notification or email** when you haven't logged something by a time you choose.
 
 Built with Next.js on Vercel's free Hobby tier and Supabase's free tier.
 
@@ -9,6 +9,14 @@ Built with Next.js on Vercel's free Hobby tier and Supabase's free tier.
 - **Workouts:** log exercises, sets, reps and weight; save routines like "Push Day"; see what you did last time; automatic personal-record detection; rest timer; progress charts and estimated 1-rep max per exercise; weekly goal and streak.
 - **Body weight:** one-tap daily logging, a 7-day moving-average trend chart, kg or lb.
 - **To-dos:** one-off, daily, weekly or monthly tasks you tick off.
+- **Teeth:** morning and night check-ins with optional floss and mouthwash, a brushing streak, and a bedtime reminder if you forget.
+- **Distance challenges:** every km you walk, hike, run, ride, row or swim moves you along a virtual route with checkpoints and a finisher's medal:
+  - Te Araroa (the length of New Zealand)
+  - The Walk to Mordor
+  - The Milford Track
+  - The Tongariro Alpine Crossing
+  - A marathon
+- **Achievements:** medals, checkpoints, brushing and flossing streak badges, and workout milestones, with a celebration when you earn one and an optional push notification for checkpoints.
 - **Reminders:**
   - "No weigh-in by 9:00", "no workout on a gym day by 19:00", or "to-do due"
   - Sent only if you haven't done it, with one optional follow-up and a "skip today" option

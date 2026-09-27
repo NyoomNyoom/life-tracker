@@ -5,7 +5,7 @@ import { occursOn, type TodoLike } from "../todos";
 // Pure scheduling logic for reminders: given a rule, the user's timezone, the current instant and
 // what has already been sent, decide whether a notification is due. No I/O here, so it's unit-tested.
 
-export type ReminderKind = "weight" | "workout" | "todo";
+export type ReminderKind = "weight" | "workout" | "todo" | "teeth";
 export type Stage = "initial" | "follow_up";
 
 export type ReminderRule = {
@@ -89,6 +89,7 @@ export function buildMessage(
   stage: Stage,
   label: string | null,
   todoTitle: string | null,
+  teethSlot: "morning" | "night" | null = null,
 ): ReminderMessage {
   const again = stage === "follow_up";
   switch (kind) {
@@ -110,5 +111,17 @@ export function buildMessage(
         body: again ? `Still to do today: ${todoTitle ?? "your task"}` : `Due today: ${todoTitle ?? "your task"}`,
         path: "/todos",
       };
+    case "teeth":
+      return teethSlot === "morning"
+        ? {
+            title: label || "Brush your teeth",
+            body: again ? "Your morning brush still isn't ticked off." : "Morning brush not logged yet. Two minutes, then tick it off.",
+            path: "/teeth",
+          }
+        : {
+            title: label || (again ? "Last call: brush before bed" : "Time to brush"),
+            body: again ? "Tonight's brush still isn't ticked off. Keep the streak alive!" : "Brush (and floss) before bed, then tick it off.",
+            path: "/teeth",
+          };
   }
 }

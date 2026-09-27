@@ -23,7 +23,64 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "exercises": {
+            "achievements": {
+                  Row: {
+                    "awarded_at": string,"key": string,"user_id": string
+                  }
+                  Insert: {
+                    "awarded_at"?: string,"key": string,"user_id"?: string
+                  }
+                  Update: {
+                    "awarded_at"?: string,"key"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "achievements_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"brushing_logs": {
+                  Row: {
+                    "flossed": boolean,"log_date": string,"logged_at": string,"mouthwash": boolean,"slot": string,"user_id": string
+                  }
+                  Insert: {
+                    "flossed"?: boolean,"log_date": string,"logged_at"?: string,"mouthwash"?: boolean,"slot": string,"user_id"?: string
+                  }
+                  Update: {
+                    "flossed"?: boolean,"log_date"?: string,"logged_at"?: string,"mouthwash"?: boolean,"slot"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "brushing_logs_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"challenge_entries": {
+                  Row: {
+                    "challenge_slug": string,"completed_at": string | null,"joined_at": string,"start_date": string,"user_id": string
+                  }
+                  Insert: {
+                    "challenge_slug": string,"completed_at"?: string | null,"joined_at"?: string,"start_date": string,"user_id"?: string
+                  }
+                  Update: {
+                    "challenge_slug"?: string,"completed_at"?: string | null,"joined_at"?: string,"start_date"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "challenge_entries_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exercises": {
                   Row: {
                     "created_at": string,"id": string,"kind": string,"muscle_group": string,"name": string,"user_id": string | null
                   }
@@ -44,13 +101,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"display_name": string | null,"email": string,"id": string,"timezone": string,"unit": string,"updated_at": string,"weekly_workout_goal": number
+                    "created_at": string,"display_name": string | null,"email": string,"id": string,"notify_milestones": boolean,"timezone": string,"unit": string,"updated_at": string,"weekly_workout_goal": number
                   }
                   Insert: {
-                    "created_at"?: string,"display_name"?: string | null,"email": string,"id": string,"timezone"?: string,"unit"?: string,"updated_at"?: string,"weekly_workout_goal"?: number
+                    "created_at"?: string,"display_name"?: string | null,"email": string,"id": string,"notify_milestones"?: boolean,"timezone"?: string,"unit"?: string,"updated_at"?: string,"weekly_workout_goal"?: number
                   }
                   Update: {
-                    "created_at"?: string,"display_name"?: string | null,"email"?: string,"id"?: string,"timezone"?: string,"unit"?: string,"updated_at"?: string,"weekly_workout_goal"?: number
+                    "created_at"?: string,"display_name"?: string | null,"email"?: string,"id"?: string,"notify_milestones"?: boolean,"timezone"?: string,"unit"?: string,"updated_at"?: string,"weekly_workout_goal"?: number
                   }
                   Relationships: [
                     
@@ -101,13 +158,13 @@ isOneToOne: false
                   ]
                 },"reminders": {
                   Row: {
-                    "channel": string,"created_at": string,"enabled": boolean,"follow_up_minutes": number | null,"id": string,"kind": string,"label": string | null,"time_of_day": string,"todo_id": string | null,"updated_at": string,"user_id": string,"weekdays": (number)[]
+                    "channel": string,"created_at": string,"enabled": boolean,"follow_up_minutes": number | null,"id": string,"kind": string,"label": string | null,"teeth_slot": string | null,"time_of_day": string,"todo_id": string | null,"updated_at": string,"user_id": string,"weekdays": (number)[]
                   }
                   Insert: {
-                    "channel"?: string,"created_at"?: string,"enabled"?: boolean,"follow_up_minutes"?: number | null,"id"?: string,"kind": string,"label"?: string | null,"time_of_day": string,"todo_id"?: string | null,"updated_at"?: string,"user_id"?: string,"weekdays"?: (number)[]
+                    "channel"?: string,"created_at"?: string,"enabled"?: boolean,"follow_up_minutes"?: number | null,"id"?: string,"kind": string,"label"?: string | null,"teeth_slot"?: string | null,"time_of_day": string,"todo_id"?: string | null,"updated_at"?: string,"user_id"?: string,"weekdays"?: (number)[]
                   }
                   Update: {
-                    "channel"?: string,"created_at"?: string,"enabled"?: boolean,"follow_up_minutes"?: number | null,"id"?: string,"kind"?: string,"label"?: string | null,"time_of_day"?: string,"todo_id"?: string | null,"updated_at"?: string,"user_id"?: string,"weekdays"?: (number)[]
+                    "channel"?: string,"created_at"?: string,"enabled"?: boolean,"follow_up_minutes"?: number | null,"id"?: string,"kind"?: string,"label"?: string | null,"teeth_slot"?: string | null,"time_of_day"?: string,"todo_id"?: string | null,"updated_at"?: string,"user_id"?: string,"weekdays"?: (number)[]
                   }
                   Relationships: [
                     {
@@ -283,6 +340,11 @@ isOneToOne: false
           Functions: {
             "can_use_exercise":
 { Args: { "p_exercise_id": string }; Returns: boolean
+                           },
+"challenge_distances":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "challenge_slug": string,"completed_at": string,"distance_m": number,"start_date": string
+            }[]
                            },
 "exercise_snapshot":
 { Args: { "p_exclude_workout"?: string,"p_exercise_ids": (string)[] }; Returns: {

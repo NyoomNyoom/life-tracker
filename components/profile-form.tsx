@@ -10,7 +10,7 @@ import { Field, Input, Select } from "./ui";
 export function ProfileForm({
   initial,
 }: {
-  initial: { display_name: string | null; unit: "kg" | "lb"; timezone: string; weekly_workout_goal: number };
+  initial: { display_name: string | null; unit: "kg" | "lb"; timezone: string; weekly_workout_goal: number; notify_milestones: boolean };
 }) {
   const [state, action] = useActionState<ActionResult, FormData>(updateProfile, null);
   const [unit, setUnit] = useState(initial.unit);
@@ -57,6 +57,13 @@ export function ProfileForm({
           ))}
         </Select>
       </Field>
+      <label className="flex items-center justify-between gap-3 text-[16px]">
+        <span>
+          Checkpoint &amp; medal notifications
+          <span className="block text-[13px] text-muted">A push when you reach a challenge checkpoint or finish one.</span>
+        </span>
+        <input type="checkbox" name="notify_milestones" defaultChecked={initial.notify_milestones} className="size-5 shrink-0 accent-[var(--accent)]" />
+      </label>
       <FormError message={state && !state.ok ? state.error : null} />
       {state?.ok && <p className="text-[14px] font-medium text-accent">Saved ✓</p>}
       <SubmitButton>Save</SubmitButton>

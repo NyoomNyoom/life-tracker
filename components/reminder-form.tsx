@@ -3,13 +3,14 @@
 import { useActionState, useState } from "react";
 import { saveReminder } from "@/app/(app)/reminders/actions";
 import type { ActionResult } from "@/lib/viewer";
-import { FormError, SubmitButton, WeekdayPicker } from "./form-controls";
+import { FormError, Segmented, SubmitButton, WeekdayPicker } from "./form-controls";
 import { ReminderFields, type ReminderFieldValues } from "./reminder-fields";
 import { Field, Input } from "./ui";
 
 export type ReminderFormValues = ReminderFieldValues & {
   id?: string;
-  kind: "weight" | "workout";
+  kind: "weight" | "workout" | "teeth";
+  teeth_slot?: "morning" | "night" | null;
   label: string | null;
   weekdays: number[];
   enabled: boolean;
@@ -18,18 +19,26 @@ export type ReminderFormValues = ReminderFieldValues & {
 const COPY = {
   weight: { days: "Days to weigh in", hint: "Sent only if you haven't logged your weight that day.", placeholder: "Log your weight" },
   workout: { days: "Your gym days", hint: "Sent only if you haven't logged a workout that day.", placeholder: "It's a gym day" },
+  teeth: { days: "Days", hint: "Sent only if that brush isn't ticked off yet.", placeholder: "Time to brush" },
 };
 
 export function ReminderForm({ initial }: { initial: ReminderFormValues }) {
   const [state, action] = useActionState<ActionResult, FormData>(saveReminder, null);
   const [weekdays, setWeekdays] = useState(initial.weekdays);
   const [enabled, setEnabled] = useState(initial.enabled);
+  const [slot, setSlot] = useState<"morning" | "night">(initial.teeth_slot ?? "night");
   const copy = COPY[initial.kind];
 
   return (
     <form action={action} className="space-y-4 px-4">
       {initial.id ? <input type="hidden" name="id" value={initial.id} /> : <input type="hidden" name="kind" value={initial.kind} />}
       <div className="space-y-3 rounded-2xl bg-card p-4">
+        {initial.kind === "teeth" && (
+          <div>
+            <span className="mb-1.5 block text-[14px] font-medium text-muted">Which brush?</span>
+            <Segmented name="teeth_slot" value={slot} onChange={setSlot} options={[{ value: "morning", label: "Morning" }, { value: "night", label: "Night" }]} />
+          </div>
+        )}
         <span className="block text-[14px] font-medium text-muted">{copy.days}</span>
         <WeekdayPicker name="weekdays" value={weekdays} onChange={setWeekdays} />
         <ReminderFields initial={initial} />

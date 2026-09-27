@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bell, Dumbbell, LogOut, NotebookTabs, Settings, Smartphone } from "lucide-react";
+import { Award, Bell, Dumbbell, LogOut, NotebookTabs, Route, Settings, Smartphone, Smile } from "lucide-react";
 import { Card, List, ListRow, PageHeader } from "@/components/ui";
 import { getViewer } from "@/lib/viewer";
 
@@ -12,7 +12,14 @@ export default async function MorePage() {
       <PageHeader title="More" subtitle={profile.email} />
       <Card>
         <List>
-          <ListRow href="/reminders" icon={<Bell className="size-5 text-accent" aria-hidden />} title="Reminders" subtitle="Weigh-ins, gym days, to-dos" />
+          <ListRow href="/teeth" icon={<Smile className="size-5 text-accent" aria-hidden />} title="Teeth" subtitle="Morning and night brushing, floss, mouthwash" />
+          <ListRow href="/challenges" icon={<Route className="size-5 text-accent" aria-hidden />} title="Distance challenges" subtitle="Te Araroa, the walk to Mordor and more" />
+          <ListRow href="/achievements" icon={<Award className="size-5 text-accent" aria-hidden />} title="Achievements" subtitle="Medals and badges" />
+        </List>
+      </Card>
+      <Card>
+        <List>
+          <ListRow href="/reminders" icon={<Bell className="size-5 text-accent" aria-hidden />} title="Reminders" subtitle="Weigh-ins, gym days, brushing, to-dos" />
           <ListRow href="/exercises" icon={<Dumbbell className="size-5 text-accent" aria-hidden />} title="Exercises & progress" />
           <ListRow href="/workouts" icon={<NotebookTabs className="size-5 text-accent" aria-hidden />} title="Routines" />
         </List>

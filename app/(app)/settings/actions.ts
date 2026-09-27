@@ -19,11 +19,12 @@ export async function updateProfile(_prev: ActionResult, formData: FormData): Pr
       weekly_workout_goal: z.coerce.number().int().min(1).max(14),
     })
     .safeParse(Object.fromEntries(formData));
+  const notifyMilestones = formData.get("notify_milestones") === "on";
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
   const { error } = await viewer.supabase
     .from("profiles")
-    .update({ ...parsed.data, display_name: parsed.data.display_name || null })
+    .update({ ...parsed.data, display_name: parsed.data.display_name || null, notify_milestones: notifyMilestones })
     .eq("id", viewer.userId);
   if (error) return { ok: false, error: error.message.includes("timezone") ? "That timezone isn't supported." : error.message };
   revalidatePath("/", "layout");

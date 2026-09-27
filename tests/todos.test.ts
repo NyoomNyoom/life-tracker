@@ -44,3 +44,25 @@ describe("helpers", () => {
     expect(describeSchedule({ ...base, schedule: "monthly", month_day: 13 }, describeWeekdays)).toBe("Monthly on the 13th");
   });
 });
+
+describe("localDateOf", async () => {
+  const { localDateOf } = await import("@/lib/dates");
+  it("gives the calendar date in the user's timezone, not UTC", () => {
+    // 12:30 UTC on the 27th is already 01:30 on the 28th in Auckland (NZDT).
+    expect(localDateOf("2026-09-27T12:30:00Z", "Pacific/Auckland")).toBe("2026-09-28");
+    expect(localDateOf("2026-09-27T12:30:00Z", "America/New_York")).toBe("2026-09-27");
+    expect(localDateOf("2026-09-27T12:30:00+00:00", "Not/AZone")).toBe("2026-09-27");
+  });
+});
+
+describe("parseOutingDuration", async () => {
+  const { parseOutingDuration } = await import("@/lib/dates");
+  it("reads walk times in minutes and hours", () => {
+    expect(parseOutingDuration("45")).toBe(45 * 60);
+    expect(parseOutingDuration("1:30")).toBe(90 * 60);
+    expect(parseOutingDuration("5:30:00")).toBe(19800);
+    expect(parseOutingDuration("1:05:30")).toBe(3930);
+    expect(parseOutingDuration("abc")).toBeNull();
+    expect(parseOutingDuration("1::2")).toBeNull();
+  });
+});

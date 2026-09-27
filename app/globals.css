@@ -24,6 +24,9 @@
   --warn-soft: rgba(217, 119, 6, 0.12);
   --pr: #a16207;
   --pr-soft: rgba(234, 179, 8, 0.18);
+  --teeth: #0284c7;
+  --teeth-soft: rgba(2, 132, 199, 0.12);
+  --journey: #c2410c;
 
   /* Charts (validated with the dataviz palette checker for both modes) */
   --chart-surface: #ffffff;
@@ -53,6 +56,9 @@
     --warn-soft: rgba(251, 191, 36, 0.14);
     --pr: #facc15;
     --pr-soft: rgba(250, 204, 21, 0.16);
+    --teeth: #38bdf8;
+    --teeth-soft: rgba(56, 189, 248, 0.16);
+    --journey: #fb923c;
 
     --chart-surface: #1c1c1e;
     --chart-grid: #2f2f31;
@@ -80,6 +86,9 @@
   --color-warn-soft: var(--warn-soft);
   --color-pr: var(--pr);
   --color-pr-soft: var(--pr-soft);
+  --color-teeth: var(--teeth);
+  --color-teeth-soft: var(--teeth-soft);
+  --color-journey: var(--journey);
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 

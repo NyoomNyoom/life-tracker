@@ -22,7 +22,7 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader title="Profile" />
-        <ProfileForm initial={{ display_name: profile.display_name, unit, timezone: profile.timezone, weekly_workout_goal: profile.weekly_workout_goal }} />
+        <ProfileForm initial={{ display_name: profile.display_name, unit, timezone: profile.timezone, weekly_workout_goal: profile.weekly_workout_goal, notify_milestones: profile.notify_milestones }} />
       </Card>
 
       <Card id="notifications">
@@ -37,6 +37,7 @@ export default async function SettingsPage() {
             { type: "weight", label: "Weigh-ins" },
             { type: "workouts", label: "Workouts (every set)" },
             { type: "todos", label: "To-dos and completions" },
+            { type: "teeth", label: "Teeth brushing" },
           ].map((e) => (
             <li key={e.type}>
               <a href={`/api/export?type=${e.type}`} className="flex items-center gap-3 px-4 py-3 text-[16px] active:bg-card-pressed" download>

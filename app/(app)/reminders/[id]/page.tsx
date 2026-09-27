@@ -14,16 +14,17 @@ export default async function ReminderPage({ params }: { params: Promise<{ id: s
   const { data: r } = await supabase.from("reminders").select("*").eq("id", id).maybeSingle();
   if (!r) notFound();
   if (r.kind === "todo" && r.todo_id) redirect(`/todos/${r.todo_id}`);
-  const kind = r.kind as "weight" | "workout";
+  const kind = r.kind as "weight" | "workout" | "teeth";
 
   return (
     <>
-      <PageHeader back={{ href: "/reminders", label: "Reminders" }} title={kind === "weight" ? "Weigh-in reminder" : "Gym-day reminder"} />
+      <PageHeader back={{ href: "/reminders", label: "Reminders" }} title={{ weight: "Weigh-in reminder", workout: "Gym-day reminder", teeth: "Brushing reminder" }[kind]} />
       <ReminderForm
         initial={{
           id: r.id,
           kind,
           label: r.label,
+          teeth_slot: r.teeth_slot as "morning" | "night" | null,
           time_of_day: r.time_of_day,
           weekdays: r.weekdays,
           channel: r.channel as "push" | "email" | "both",
