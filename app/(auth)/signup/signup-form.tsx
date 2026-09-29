@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { FormError, Segmented, SubmitButton } from "@/components/form-controls";
 import { Turnstile } from "@/components/turnstile";
-import { Field, Input, Notice } from "@/components/ui";
+import { BackLink, Field, Input, Notice } from "@/components/ui";
+import { AuthCard, AuthHeader } from "../auth-header";
 import { useDeviceTimezone, useDeviceUnit } from "@/lib/use-device";
 import { signUp, type AuthState } from "../actions";
 
@@ -18,42 +19,49 @@ export function SignupForm({ siteKey }: { siteKey?: string }) {
 
   if (state?.message) {
     return (
-      <div className="space-y-4 text-center">
-        <h1 className="text-[28px] font-bold tracking-tight">Check your email</h1>
-        <p className="text-[16px] text-muted">{state.message}</p>
-        <Link href="/login" className="inline-block text-[15px] font-semibold text-accent">
-          Back to sign in
-        </Link>
+      <div>
+        <AuthHeader title="Check your email" subtitle={state.message} />
+        <div className="px-2">
+          <BackLink href="/login" label="Back to sign in" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-center text-[28px] font-bold tracking-tight">Create your account</h1>
-      <form action={action} className="space-y-4 rounded-2xl bg-card p-4">
-        <input type="hidden" name="timezone" value={timezone} />
-        <Field label="Name" hint="Optional. Used to greet you.">
-          <Input name="displayName" autoComplete="given-name" maxLength={60} />
-        </Field>
-        <Field label="Email">
-          <Input name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} />
-        </Field>
-        <Field label="Password" hint="At least 8 characters. Your phone can suggest a strong one.">
-          <Input name="password" type="password" autoComplete="new-password" minLength={8} required />
-        </Field>
-        <div>
-          <span className="mb-1.5 block text-[14px] font-medium text-muted">Weights in</span>
-          <Segmented name="unit" value={unit} onChange={setUnit} options={[{ value: "kg", label: "Kilograms" }, { value: "lb", label: "Pounds" }]} />
-        </div>
-        <FormError message={state?.error} />
-        <Turnstile resetOn={state} siteKey={siteKey} />
-        <SubmitButton pendingText="Creating account…">Create account</SubmitButton>
-        <Notice>Timezone: {timezone}. Reminders use this; you can change it later in Settings.</Notice>
+    <div>
+      <AuthHeader title="Create your account" />
+      <form action={action}>
+        <AuthCard>
+          <input type="hidden" name="timezone" value={timezone} />
+          <Field label="Name" hint="Optional. Used to greet you.">
+            <Input name="displayName" autoComplete="given-name" maxLength={60} />
+          </Field>
+          <Field label="Email">
+            <Input name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state?.email} />
+          </Field>
+          <Field label="Password" hint="At least 8 characters. Your phone can suggest a strong one.">
+            <Input name="password" type="password" autoComplete="new-password" minLength={8} required />
+          </Field>
+          <div>
+            <span className="mb-2 block text-[15px] font-bold">Weights in</span>
+            <Segmented label="Weights in" name="unit" value={unit} onChange={setUnit} options={[{ value: "kg", label: "Kilograms" }, { value: "lb", label: "Pounds" }]} />
+          </div>
+          <FormError message={state?.error} />
+          <Turnstile resetOn={state} siteKey={siteKey} />
+          <SubmitButton size="xl" pendingText="Creating account…">
+            Create account
+          </SubmitButton>
+          <Notice tone="reminders">
+            <span className="font-medium">
+              Timezone: <b className="font-extrabold">{timezone}</b>. Reminders use this; you can change it later in Settings.
+            </span>
+          </Notice>
+        </AuthCard>
       </form>
-      <p className="text-center text-[15px] text-muted">
+      <p className="mt-6 px-2 text-[17px] font-medium text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-accent">
+        <Link href="/login" className="font-extrabold text-ink underline underline-offset-4">
           Sign in
         </Link>
       </p>

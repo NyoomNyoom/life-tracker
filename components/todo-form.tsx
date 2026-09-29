@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { saveTodo } from "@/app/(app)/todos/actions";
 import type { ActionResult } from "@/lib/viewer";
-import { FormError, Segmented, SubmitButton, WeekdayPicker } from "./form-controls";
+import { FormError, Segmented, SubmitButton, Switch, WeekdayPicker } from "./form-controls";
 import { ReminderFields, type ReminderFieldValues } from "./reminder-fields";
 import { Field, Input, Select, Textarea } from "./ui";
 
@@ -29,33 +29,36 @@ export function TodoForm({ initial, today }: { initial?: TodoFormValues; today: 
   const [active, setActive] = useState(initial?.active ?? true);
 
   return (
-    <form action={action} className="space-y-4 px-4">
+    <form action={action} className="space-y-2.5 px-3">
       {initial?.id && <input type="hidden" name="id" value={initial.id} />}
-      <div className="space-y-3 rounded-2xl bg-card p-4">
+      <div className="space-y-4 rounded-tile bg-todos p-5 text-todos-ink">
         <Field label="What needs doing?">
-          <Input name="title" defaultValue={initial?.title} placeholder="Take creatine" maxLength={120} required autoFocus={!initial} />
+          <Input onTile name="title" defaultValue={initial?.title} placeholder="Take creatine" maxLength={120} required autoFocus={!initial} size="lg" strong />
         </Field>
         <Field label="Notes">
-          <Textarea name="notes" defaultValue={initial?.notes ?? ""} placeholder="Optional" maxLength={1000} />
+          <Textarea onTile name="notes" defaultValue={initial?.notes ?? ""} placeholder="Optional" maxLength={1000} />
         </Field>
       </div>
 
-      <div className="space-y-3 rounded-2xl bg-card p-4">
-        <span className="block text-[14px] font-medium text-muted">Repeats</span>
-        <Segmented
-          name="schedule"
-          value={schedule}
-          onChange={setSchedule}
-          options={[
-            { value: "once", label: "Once" },
-            { value: "daily", label: "Daily" },
-            { value: "weekly", label: "Weekly" },
-            { value: "monthly", label: "Monthly" },
-          ]}
-        />
+      <div className="space-y-4 rounded-tile bg-card p-5">
+        <div>
+          <span className="mb-2 block text-[15px] font-bold">Repeats</span>
+          <Segmented
+            label="Repeats"
+            name="schedule"
+            value={schedule}
+            onChange={setSchedule}
+            options={[
+              { value: "once", label: "Once" },
+              { value: "daily", label: "Daily" },
+              { value: "weekly", label: "Weekly" },
+              { value: "monthly", label: "Monthly" },
+            ]}
+          />
+        </div>
         {schedule === "once" && (
           <Field label="Due on">
-            <Input type="date" name="due_date" defaultValue={initial?.due_date ?? today} required />
+            <Input type="date" name="due_date" defaultValue={initial?.due_date ?? today} required className="font-mono" />
           </Field>
         )}
         {schedule === "weekly" && <WeekdayPicker name="weekdays" value={weekdays} onChange={setWeekdays} />}
@@ -71,25 +74,27 @@ export function TodoForm({ initial, today }: { initial?: TodoFormValues; today: 
           </Field>
         )}
         {initial?.id && (
-          <label className="flex items-center justify-between pt-1 text-[16px]">
-            <span>Active</span>
-            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="size-5 accent-[var(--accent)]" />
-            <input type="hidden" name="active" value={active ? "on" : "off"} />
-          </label>
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span className="text-[18px] font-bold">Active</span>
+            <Switch name="active" label="Active" checked={active} onChange={setActive} />
+          </div>
         )}
       </div>
 
-      <div className="space-y-3 rounded-2xl bg-card p-4">
-        <label className="flex items-center justify-between text-[16px] font-medium">
-          <span>Remind me</span>
-          <input type="checkbox" name="remind" checked={remind} onChange={(e) => setRemind(e.target.checked)} className="size-5 accent-[var(--accent)]" />
-        </label>
+      <div className="space-y-4 rounded-tile bg-reminders p-5 text-reminders-ink">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[21px] font-extrabold tracking-tight">Remind me</span>
+          <Switch label="Remind me" checked={remind} onChange={setRemind} />
+          {remind && <input type="hidden" name="remind" value="on" />}
+        </div>
         {remind && <ReminderFields initial={initial?.reminder ?? undefined} />}
-        {remind && <p className="text-[13px] text-muted">Only sent on days it&apos;s due, and only if you haven&apos;t ticked it off.</p>}
+        {remind && (
+          <p className="border-t border-reminders-ink/15 pt-4 text-[16px] font-bold">Only sent on days it&apos;s due, and only if you haven&apos;t ticked it off.</p>
+        )}
       </div>
 
       <FormError message={state && !state.ok ? state.error : null} />
-      <SubmitButton>{initial?.id ? "Save changes" : "Add to-do"}</SubmitButton>
+      <SubmitButton size="xl">{initial?.id ? "Save changes" : "Add to-do"}</SubmitButton>
     </form>
   );
 }

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Trophy } from "lucide-react";
 import { ConfirmButton } from "@/components/confirm-button";
 import { ProgressChart } from "@/components/progress-chart";
-import { Badge, Card, CardHeader, EmptyState, Notice, PageHeader } from "@/components/ui";
+import { Badge, EmptyState, Notice, PageHeader, Rows, Tile, TileHeader, cx } from "@/components/ui";
 import { formatDuration, friendlyDate } from "@/lib/dates";
 import { muscleLabel } from "@/lib/exercises";
 import { estimate1RM, formatDistance, formatSet, type ExerciseKind, type SetValues } from "@/lib/training";
@@ -78,70 +78,75 @@ export default async function ExercisePage({ params, searchParams }: { params: P
   const formatMetric = (v: number) =>
     kind === "weight_reps" ? formatWeight(v, unit) : kind === "bodyweight_reps" ? `${v} reps` : kind === "duration" ? formatDuration(v) : formatDistance(v, unit);
 
+  const statTile = (label: string, value: number | string, tone: "training" | "card") => {
+    // Split "91.8 kg" so the number can be the hero and the unit sits small beside it.
+    const text = typeof value === "number" ? String(value) : value;
+    const m = /^([\d.,:]+)\s*(.*)$/.exec(text);
+    return (
+      <div className={cx("rounded-tile p-5", tone === "training" ? "bg-training text-training-ink" : "bg-card text-ink")}>
+        <p className={cx("text-[15px] font-semibold", tone === "card" && "text-muted")}>{label}</p>
+        <p className="mt-1.5 flex items-baseline gap-1">
+          <span className="tile-number text-[48px]">{m ? m[1] : text}</span>
+          {m?.[2] && <span className="text-[20px] font-bold">{m[2]}</span>}
+        </p>
+      </div>
+    );
+  };
+
   return (
     <>
       <PageHeader back={{ href: "/exercises", label: "Exercises" }} title={exercise.name} subtitle={muscleLabel(exercise.muscle_group)} />
       {error === "in-use" && (
-        <div className="mx-4 mb-4">
-          <Notice tone="warn">This exercise is used in logged workouts, so it can&apos;t be deleted.</Notice>
-        </div>
+        <Notice tone="warn" className="mx-3 mb-2.5">
+          This exercise is used in logged workouts, so it can&apos;t be deleted.
+        </Notice>
       )}
 
       {sessions.length === 0 ? (
-        <Card>
+        <Tile>
           <EmptyState title="Not logged yet" body="Once you log this exercise, your bests and a progress chart show up here." />
-        </Card>
+        </Tile>
       ) : (
         <>
-          <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-card px-4 py-3">
-              <p className="text-[13px] text-muted">{metricLabel}</p>
-              <p className="mt-0.5 text-[24px] font-semibold">{formatMetric(bestMetric)}</p>
-            </div>
-            <div className="rounded-2xl bg-card px-4 py-3">
-              <p className="text-[13px] text-muted">{kind === "weight_reps" ? "Heaviest weight" : "Sessions"}</p>
-              <p className="mt-0.5 text-[24px] font-semibold">{kind === "weight_reps" ? formatWeight(heaviest, unit) : sessions.length}</p>
-            </div>
+          <div className="mx-3 mb-2.5 grid grid-cols-2 gap-2.5">
+            {statTile(metricLabel, formatMetric(bestMetric), "training")}
+            {statTile(kind === "weight_reps" ? "Heaviest weight" : "Sessions", kind === "weight_reps" ? formatWeight(heaviest, unit) : sessions.length, "card")}
           </div>
 
-          <Card>
-            <CardHeader title={`${metricLabel} over time`} />
-            <div className="px-4 pb-4">
-              {points.length > 1 ? (
-                <ProgressChart points={points} kind={kind} unit={unit} label={metricLabel} />
-              ) : (
-                <p className="py-6 text-center text-[14px] text-muted">Log it again to start a chart.</p>
-              )}
-            </div>
-          </Card>
+          <Tile>
+            <TileHeader title={`${metricLabel} over time`} />
+            {points.length > 1 ? (
+              <ProgressChart points={points} kind={kind} unit={unit} label={metricLabel} />
+            ) : (
+              <p className="py-6 text-center text-[15px] font-medium text-muted">Log it again to start a chart.</p>
+            )}
+          </Tile>
 
-          <Card>
-            <CardHeader title="Sessions" />
-            <ul className="divide-y divide-border">
+          <Tile>
+            <TileHeader title="Sessions" />
+            <Rows>
               {[...sessions].reverse().map((s) => (
-                <li key={s.workoutId}>
-                  <Link href={`/workouts/${s.workoutId}`} className="block px-4 py-2.5 active:bg-card-pressed">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[15px] font-medium">{friendlyDate(s.date, today)}</span>
-                      {s.sets.some((x) => x.is_pr) && (
-                        <Badge tone="pr">
-                          <Trophy className="size-3" aria-hidden /> PR
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-[14px] text-muted tabular">{s.sets.map((x) => formatSet(kind, x, unit)).join(" · ")}</p>
-                  </Link>
-                </li>
+                <Link key={s.workoutId} href={`/workouts/${s.workoutId}`} className="block py-3.5 active:opacity-70">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[20px] font-extrabold tracking-tight">{friendlyDate(s.date, today)}</span>
+                    {s.sets.some((x) => x.is_pr) && (
+                      <Badge tone="pr">
+                        <Trophy className="size-3.5" aria-hidden /> PR
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-1 font-mono text-[15px] text-muted">{s.sets.map((x) => formatSet(kind, x, unit)).join(" · ")}</p>
+                </Link>
               ))}
-            </ul>
-          </Card>
+            </Rows>
+          </Tile>
         </>
       )}
 
       {exercise.user_id === userId && (
-        <form action={deleteExercise} className="mx-4 mt-6">
+        <form action={deleteExercise} className="mx-3 mt-5">
           <input type="hidden" name="id" value={exercise.id} />
-          <ConfirmButton message={`Delete your custom exercise “${exercise.name}”?`} block>
+          <ConfirmButton message={`Delete your custom exercise “${exercise.name}”?`} size="lg" block>
             Delete exercise
           </ConfirmButton>
         </form>

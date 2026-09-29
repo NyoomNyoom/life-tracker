@@ -7,11 +7,14 @@ import { dismissFromEmail, type DismissState } from "./actions";
 
 export function DismissForm({ token }: { token: string }) {
   const [state, action] = useActionState<DismissState, FormData>(dismissFromEmail, null);
-  if (state) return <Notice tone={state.ok ? "accent" : "danger"}>{state.message}</Notice>;
+  if (state) return <Notice tone={state.ok ? "success" : "danger"}>{state.message}</Notice>;
   return (
-    <form action={action}>
+    <form action={action} className="rounded-tile bg-reminders p-6 text-reminders-ink">
       <input type="hidden" name="token" value={token} />
-      <SubmitButton pendingText="Dismissing…">Dismiss for today</SubmitButton>
+      <h1 className="display mb-6 text-[38px]">Skip this reminder today?</h1>
+      <SubmitButton variant="bare" size="xl" pendingText="Dismissing…" className="bg-reminders-ink text-white">
+        Dismiss for today
+      </SubmitButton>
     </form>
   );
 }

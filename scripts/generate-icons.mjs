@@ -27,7 +27,7 @@ for (const { file, size, pad } of targets) {
   await page.setViewportSize({ width: size, height: size });
   const inner = Math.round(size * (1 - pad * 2));
   await page.setContent(
-    `<html><body style="margin:0;background:#16a34a;display:grid;place-items:center;width:${size}px;height:${size}px">` +
+    `<html><body style="margin:0;background:#17150f;display:grid;place-items:center;width:${size}px;height:${size}px">` +
       `<div style="width:${inner}px;height:${inner}px">${svg.replace("<svg ", `<svg width="${inner}" height="${inner}" `)}</div></body></html>`,
   );
   await page.screenshot({ path: new URL(`../public/icons/${file}`, import.meta.url).pathname, omitBackground: false });

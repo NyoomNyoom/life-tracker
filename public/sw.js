@@ -1,6 +1,6 @@
 /* Life Tracker service worker: push notifications + offline fallback. Plain JS, served as-is. */
 
-const CACHE = "life-tracker-v1";
+const CACHE = "life-tracker-v2";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/apple-touch-icon.png"];
 

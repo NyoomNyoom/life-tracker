@@ -2,9 +2,9 @@
 
 import { useOptimistic, useTransition } from "react";
 import { setReminderEnabled } from "@/app/(app)/reminders/actions";
-import { cx } from "./ui";
+import { SwitchKnob, switchClass } from "./form-controls";
 
-/** iOS-style switch that turns a reminder on or off in place. */
+/** Switch that turns a reminder on or off in place. */
 export function ReminderToggle({ id, enabled, label }: { id: string; enabled: boolean; label: string }) {
   const [on, setOn] = useOptimistic(enabled);
   const [, startTransition] = useTransition();
@@ -20,9 +20,9 @@ export function ReminderToggle({ id, enabled, label }: { id: string; enabled: bo
           await setReminderEnabled(id, !on);
         })
       }
-      className={cx("relative h-[31px] w-[51px] shrink-0 rounded-full transition", on ? "bg-accent" : "bg-field")}
+      className={switchClass(on)}
     >
-      <span className={cx("absolute top-[2px] size-[27px] rounded-full bg-white shadow transition-all", on ? "left-[22px]" : "left-[2px]")} />
+      <SwitchKnob on={on} />
     </button>
   );
 }

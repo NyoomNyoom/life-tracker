@@ -15,7 +15,7 @@ export function ProgressChart({ points, kind, unit, label }: { points: { date: s
       ariaLabel={label}
       formatValue={format}
       endLabelSeries="metric"
-      series={[{ id: "metric", label, color: "var(--chart-trend)", mark: "line+dots", points: display }]}
+      series={[{ id: "metric", label, color: "var(--training)", mark: "line+dots", points: display, lastPoint: { fill: "var(--ink)", ring: "var(--todos)" } }]}
     />
   );
 }
