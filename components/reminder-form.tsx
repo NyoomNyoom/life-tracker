@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { saveReminder } from "@/app/(app)/reminders/actions";
 import type { ActionResult } from "@/lib/viewer";
-import { FormError, Segmented, SubmitButton, WeekdayPicker } from "./form-controls";
+import { FormError, Segmented, SubmitButton, Switch, WeekdayPicker } from "./form-controls";
 import { ReminderFields, type ReminderFieldValues } from "./reminder-fields";
 import { Field, Input } from "./ui";
 
@@ -30,34 +30,45 @@ export function ReminderForm({ initial }: { initial: ReminderFormValues }) {
   const copy = COPY[initial.kind];
 
   return (
-    <form action={action} className="space-y-4 px-4">
+    <form action={action} className="space-y-2.5 px-3">
       {initial.id ? <input type="hidden" name="id" value={initial.id} /> : <input type="hidden" name="kind" value={initial.kind} />}
-      <div className="space-y-3 rounded-2xl bg-card p-4">
+      <div className="space-y-4 rounded-tile bg-reminders p-5 text-reminders-ink">
         {initial.kind === "teeth" && (
           <div>
-            <span className="mb-1.5 block text-[14px] font-medium text-muted">Which brush?</span>
-            <Segmented name="teeth_slot" value={slot} onChange={setSlot} options={[{ value: "morning", label: "Morning" }, { value: "night", label: "Night" }]} />
+            <span className="mb-2 block text-[15px] font-bold">Which brush?</span>
+            <Segmented
+              tone="reminders"
+              label="Which brush?"
+              name="teeth_slot"
+              value={slot}
+              onChange={setSlot}
+              options={[
+                { value: "morning", label: "Morning" },
+                { value: "night", label: "Night" },
+              ]}
+            />
           </div>
         )}
-        <span className="block text-[14px] font-medium text-muted">{copy.days}</span>
-        <WeekdayPicker name="weekdays" value={weekdays} onChange={setWeekdays} />
+        <div>
+          <span className="mb-2 block text-[15px] font-bold">{copy.days}</span>
+          <WeekdayPicker tone="reminders" name="weekdays" value={weekdays} onChange={setWeekdays} />
+        </div>
         <ReminderFields initial={initial} />
-        <p className="text-[13px] text-muted">{copy.hint}</p>
+        <p className="border-t border-reminders-ink/15 pt-4 text-[16px] font-bold">{copy.hint}</p>
       </div>
-      <div className="space-y-3 rounded-2xl bg-card p-4">
+      <div className="space-y-5 rounded-tile bg-card p-5">
         <Field label="Custom title" hint="Optional. Shown as the notification title.">
           <Input name="label" defaultValue={initial.label ?? ""} placeholder={copy.placeholder} maxLength={80} />
         </Field>
         {initial.id && (
-          <label className="flex items-center justify-between text-[16px]">
-            <span>On</span>
-            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="size-5 accent-[var(--accent)]" />
-            <input type="hidden" name="enabled" value={enabled ? "on" : "off"} />
-          </label>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[18px] font-bold">On</span>
+            <Switch name="enabled" label="Reminder on" checked={enabled} onChange={setEnabled} />
+          </div>
         )}
       </div>
       <FormError message={state && !state.ok ? state.error : null} />
-      <SubmitButton>{initial.id ? "Save changes" : "Create reminder"}</SubmitButton>
+      <SubmitButton size="xl">{initial.id ? "Save changes" : "Create reminder"}</SubmitButton>
     </form>
   );
 }

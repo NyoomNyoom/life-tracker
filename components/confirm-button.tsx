@@ -11,7 +11,7 @@ export function ConfirmButton({
   block,
   className,
   ...rest
-}: ComponentProps<"button"> & { message: string; variant?: "primary" | "secondary" | "ghost" | "danger"; size?: "sm" | "md" | "lg"; block?: boolean }) {
+}: ComponentProps<"button"> & { message: string; variant?: "primary" | "secondary" | "outline" | "white" | "danger" | "ghost" | "bare"; size?: "sm" | "md" | "lg" | "xl"; block?: boolean }) {
   return (
     <button
       type="submit"

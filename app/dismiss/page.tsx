@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { LogoMark } from "@/components/icons";
 import { verifyDismissToken } from "@/lib/links";
 import { DismissForm } from "./dismiss-form";
 
@@ -11,10 +11,16 @@ export default async function DismissPage({ searchParams }: { searchParams: Prom
   const { token = "" } = await searchParams;
   const valid = verifyDismissToken(token) != null;
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 px-5 text-center">
-      <Image src="/icons/icon-192.png" alt="" width={56} height={56} className="mx-auto rounded-2xl" />
-      <h1 className="text-[24px] font-bold">{valid ? "Skip this reminder today?" : "Link expired"}</h1>
-      {valid ? <DismissForm token={token} /> : <p className="text-muted">Open the app to manage your reminders.</p>}
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-5 px-5 py-10">
+      <LogoMark size={60} />
+      {valid ? (
+        <DismissForm token={token} />
+      ) : (
+        <div className="rounded-[26px] bg-card px-6 py-5">
+          <h1 className="text-[20px] font-extrabold">Link expired</h1>
+          <p className="mt-1 text-[16px] font-medium text-muted">Open the app to manage your reminders.</p>
+        </div>
+      )}
     </main>
   );
 }

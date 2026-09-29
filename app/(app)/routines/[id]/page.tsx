@@ -28,8 +28,9 @@ export default async function RoutinePage({ params }: { params: Promise<{ id: st
       <PageHeader
         back={{ href: "/workouts", label: "Train" }}
         title={routine.name}
+        subtitle={`Routine · ${routine.routine_exercises.length} exercise${routine.routine_exercises.length === 1 ? "" : "s"}`}
         action={
-          <LinkButton href={`/workouts/new?routine=${routine.id}`} size="sm">
+          <LinkButton href={`/workouts/new?routine=${routine.id}`} size="md">
             Start
           </LinkButton>
         }
@@ -50,9 +51,9 @@ export default async function RoutinePage({ params }: { params: Promise<{ id: st
           })),
         }}
       />
-      <form action={deleteRoutine} className="mx-4 mt-6">
+      <form action={deleteRoutine} className="mx-3 mt-2.5">
         <input type="hidden" name="id" value={routine.id} />
-        <ConfirmButton message="Delete this routine? Workouts you logged with it are kept." block>
+        <ConfirmButton message="Delete this routine? Workouts you logged with it are kept." size="lg" block>
           Delete routine
         </ConfirmButton>
       </form>

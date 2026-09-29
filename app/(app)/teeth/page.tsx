@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Bell, Flame } from "lucide-react";
 import { BadgeDisc } from "@/components/achievement-icon";
 import { PastSlotToggle, TeethTracker } from "@/components/teeth-tracker";
-import { Card, CardHeader, PageHeader } from "@/components/ui";
+import { PageHeader, Rows, Tile, TileHeader } from "@/components/ui";
 import { BADGES } from "@/lib/achievements";
 import { addDays, friendlyDate } from "@/lib/dates";
 import { brushingStats, groupByDay, type BrushLog } from "@/lib/habits";
@@ -38,75 +38,81 @@ export default async function TeethPage() {
         back={{ href: "/more", label: "More" }}
         title="Teeth"
         subtitle={
-          <span className="inline-flex items-center gap-1">
-            {stats.streak > 0 && <Flame className="size-4 text-warn" aria-hidden />}
+          <span className="inline-flex items-center gap-1.5">
+            {stats.streak > 0 && <Flame className="size-5 fill-training text-danger" aria-hidden />}
             {stats.streak === 0 ? "Brush morning and night to start a streak" : `${stats.streak}-day streak`}
           </span>
         }
       />
 
-      <Card>
-        <CardHeader title="Today" />
+      <Tile tone="teeth">
+        <TileHeader title="Today" />
         <TeethTracker date={today} day={stats.today} />
         {nextBadge && (
-          <p className="px-4 pt-1 pb-3 text-[13px] text-muted">
+          <p className="mt-4 text-[15px] font-medium">
             {nextBadge[0] - stats.streak} more complete day{nextBadge[0] - stats.streak === 1 ? "" : "s"} for “{BADGES.find((b) => b.key === nextBadge[1])!.title}”.
           </p>
         )}
-      </Card>
+      </Tile>
 
-      <div className="mx-4 mb-4 grid grid-cols-3 gap-2 text-center">
+      <div className="mx-3 mb-2.5 grid grid-cols-3 gap-2.5">
         {[
           { label: "both brushes", value: stats.week.complete },
           { label: "flossed", value: stats.week.flossed },
           { label: "mouthwash", value: stats.week.mouthwash },
         ].map((s) => (
-          <div key={s.label} className="rounded-2xl bg-card py-3">
-            <p className="text-[22px] font-semibold">
-              {s.value}
-              <span className="text-[15px] text-muted">/7</span>
+          <div key={s.label} className="rounded-[24px] bg-card px-2 py-4 text-center">
+            <p className="flex items-baseline justify-center">
+              <span className="tile-number text-[40px]">{s.value}</span>
+              <span className="text-[18px] font-bold text-muted">/7</span>
             </p>
-            <p className="text-[12px] text-muted">{s.label}</p>
+            <p className="mt-1 text-[14px] leading-tight font-medium text-muted">{s.label}</p>
           </div>
         ))}
       </div>
 
-      <Card>
-        <CardHeader title="Last two weeks" />
-        <ul className="divide-y divide-border">
+      <Tile>
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold">Last two weeks</h2>
+          <span className="flex font-mono text-[12px] text-muted" aria-hidden>
+            <span className="w-12 text-center">AM</span>
+            <span className="ml-2 w-12 text-center">PM</span>
+          </span>
+        </div>
+        <Rows>
           {Array.from({ length: 13 }, (_, i) => addDays(today, -(i + 1))).map((date) => {
             const d = days.get(date);
             const extras = [d?.morning?.flossed || d?.night?.flossed ? "floss" : null, d?.morning?.mouthwash || d?.night?.mouthwash ? "mouthwash" : null].filter(Boolean);
             return (
-              <li key={date} className="flex items-center gap-3 px-4 py-2">
+              <div key={date} className="flex items-center gap-2 py-2">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px]">{friendlyDate(date, today)}</p>
-                  {extras.length > 0 && <p className="text-[12px] text-muted">+ {extras.join(", ")}</p>}
+                  <p className="text-[17px] font-bold">{friendlyDate(date, today)}</p>
+                  {extras.length > 0 && <p className="text-[14px] font-medium text-muted">+ {extras.join(", ")}</p>}
                 </div>
                 <PastSlotToggle date={date} slot="morning" done={!!d?.morning} label={`Brushed the morning of ${date}`} />
                 <PastSlotToggle date={date} slot="night" done={!!d?.night} label={`Brushed the night of ${date}`} />
-              </li>
+              </div>
             );
           })}
-        </ul>
-      </Card>
+        </Rows>
+      </Tile>
 
-      <Card>
-        <CardHeader title="Badges" />
-        <ul className="grid grid-cols-3 gap-3 px-4 pb-4">
+      <Tile>
+        <TileHeader title="Badges" />
+        <ul className="grid grid-cols-3 gap-x-2 gap-y-5 pt-2">
           {teethBadges.map((b) => (
-            <li key={b.key} className="flex flex-col items-center gap-1.5 text-center">
-              <BadgeDisc achievement={b} earned={have.has(b.key)} />
-              <span className={`text-[12px] leading-tight font-medium ${have.has(b.key) ? "" : "text-muted"}`}>{b.title}</span>
+            <li key={b.key} className="flex flex-col items-center gap-2 text-center">
+              <BadgeDisc achievement={b} earned={have.has(b.key)} size={64} />
+              <span className={`text-[15px] leading-tight font-bold ${have.has(b.key) ? "" : "text-muted"}`}>{b.title}</span>
             </li>
           ))}
         </ul>
-      </Card>
+      </Tile>
 
       {!reminders?.length && (
-        <Link href="/reminders/new?kind=teeth" className="mx-4 mb-4 flex items-center gap-3 rounded-2xl bg-teeth-soft px-4 py-3 text-teeth">
-          <Bell className="size-5" aria-hidden />
-          <span className="text-[15px] font-semibold">Get a reminder if you haven&apos;t brushed by bedtime</span>
+        <Link href="/reminders/new?kind=teeth" className="mx-3 mb-2.5 flex items-center gap-3 rounded-tile bg-reminders px-5 py-4 text-reminders-ink active:opacity-85">
+          <Bell className="size-6 shrink-0" aria-hidden />
+          <span className="text-[16px] font-bold">Get a reminder if you haven&apos;t brushed by bedtime</span>
         </Link>
       )}
     </>

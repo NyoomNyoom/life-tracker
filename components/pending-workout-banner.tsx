@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { CloudOff, Dumbbell } from "lucide-react";
+import { ChevronRight, CloudOff } from "lucide-react";
+import { BarbellIcon } from "./icons";
 import { draftStorageKey, type WorkoutDraft } from "@/lib/workout-draft";
 
 function subscribe(callback: () => void) {
@@ -40,12 +41,13 @@ export function PendingWorkoutBanner({ userId }: { userId: string }) {
   return (
     <Link
       href="/workouts/new"
-      className={`mx-4 mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 ${draft.pendingSync ? "bg-warn-soft text-warn" : "bg-accent text-accent-fg"}`}
+      className={`mx-3 mb-2.5 flex min-h-16 items-center gap-3.5 rounded-full py-3 pr-5 pl-6 active:opacity-85 ${draft.pendingSync ? "bg-todos text-ink" : "bg-ink text-todos"}`}
     >
-      {draft.pendingSync ? <CloudOff className="size-5 shrink-0" aria-hidden /> : <Dumbbell className="size-5 shrink-0" aria-hidden />}
-      <span className="flex-1 text-[15px] font-semibold">
+      {draft.pendingSync ? <CloudOff className="size-6 shrink-0" aria-hidden /> : <BarbellIcon className="size-6 shrink-0" aria-hidden />}
+      <span className="flex-1 text-[17px] leading-snug font-bold">
         {draft.pendingSync ? `“${draft.name}” is waiting to upload. Tap to retry.` : `“${draft.name}” in progress. Tap to resume.`}
       </span>
+      <ChevronRight className="size-6 shrink-0" aria-hidden />
     </Link>
   );
 }

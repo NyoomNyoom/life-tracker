@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Check, CloudOff, Ellipsis, Plus, Timer, Trash2, Trophy } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronDown, CloudOff, Ellipsis, Plus, Timer, Trash2, Trophy } from "lucide-react";
 import { formatDuration } from "@/lib/dates";
 import type { ExerciseLite } from "@/lib/exercises";
 import { afterWorkoutSaved } from "@/app/(app)/workouts/actions";
@@ -27,7 +27,7 @@ import {
 } from "@/lib/workout-draft";
 import { ExercisePicker } from "./exercise-picker";
 import { FormError } from "./form-controls";
-import { Button, Notice, buttonClass, cx, inputClass } from "./ui";
+import { Button, Notice, buttonClass, cx } from "./ui";
 
 type Props = {
   userId: string;
@@ -277,45 +277,47 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
   const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0);
 
   return (
-    <div className="pb-24">
-      <header className="px-4 pt-4 pb-2">
+    <div className={rest ? "pb-24" : undefined}>
+      <header className="px-5 pt-4 pb-4">
         <input
           value={draft.name}
           onChange={(e) => update((d) => ({ ...d, name: e.target.value }))}
           aria-label="Workout name"
           maxLength={80}
-          className="w-full bg-transparent text-[28px] font-bold tracking-tight outline-none"
+          className="display w-full bg-transparent text-[38px] outline-none"
         />
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-muted">
+        <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[15px]">
           <input
             type="date"
             value={draft.date}
             onChange={(e) => e.target.value && update((d) => ({ ...d, date: e.target.value }))}
             aria-label="Workout date"
-            className="rounded-lg bg-card px-2 py-1 text-[14px] text-fg"
+            className="h-11 rounded-full bg-card px-4 font-mono text-[15px] text-ink outline-none focus:ring-2 focus:ring-ink"
           />
-          {draft.mode === "new" && <Elapsed since={draft.startedAt} />}
-          <span>
+          {draft.mode === "new" && (
+            <span className="flex h-11 items-center rounded-full bg-training px-4 text-training-ink">
+              <Elapsed since={draft.startedAt} />
+            </span>
+          )}
+          <span className="flex h-11 items-center rounded-full bg-card px-4">
             {doneSets} set{doneSets === 1 ? "" : "s"} done
           </span>
         </div>
       </header>
 
-      <div className="space-y-3 px-4">
+      <div className="space-y-2.5 px-3 empty:hidden">
         {resumed && (
-          <Notice tone="accent">
-            <div className="flex items-center justify-between gap-3">
-              <span>Picked up your workout in progress.</span>
-              <button type="button" className="shrink-0 font-semibold underline" onClick={() => setResumed(false)}>
-                OK
-              </button>
-            </div>
-          </Notice>
+          <div className="flex items-center justify-between gap-3 rounded-[22px] bg-todos py-2.5 pr-2.5 pl-5 text-[16px] font-semibold">
+            <span>Picked up your workout in progress.</span>
+            <button type="button" className="h-11 shrink-0 rounded-full bg-ink px-5 text-[15px] font-bold text-white" onClick={() => setResumed(false)}>
+              OK
+            </button>
+          </div>
         )}
         {draft.pendingSync && offline && (
           <Notice tone="warn">
             <span className="flex items-start gap-2">
-              <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <CloudOff className="mt-0.5 size-5 shrink-0" aria-hidden />
               <span>No connection. Your workout is saved on this phone and will upload automatically when you&apos;re back online.</span>
             </span>
           </Notice>
@@ -323,7 +325,7 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
         <FormError message={error} />
       </div>
 
-      <div className="mt-3 space-y-3">
+      <div className="mt-2.5 space-y-2.5">
         {draft.exercises.map((ex, exIndex) => (
           <ExerciseCard
             key={ex.key}
@@ -357,22 +359,23 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
         ))}
       </div>
 
-      <div className="mt-4 space-y-3 px-4">
-        <Button type="button" variant="secondary" size="lg" block onClick={() => setPickerOpen(true)}>
-          <Plus className="size-5" aria-hidden /> Add exercise
+      <div className="mt-2.5 space-y-2.5 px-3">
+        <Button type="button" size="xl" variant="bare" block onClick={() => setPickerOpen(true)} className="bg-training text-training-ink">
+          <Plus className="size-6" aria-hidden /> Add exercise
         </Button>
         <textarea
           value={draft.notes}
           onChange={(e) => update((d) => ({ ...d, notes: e.target.value }))}
           placeholder="Notes (how it felt, what to change next time)"
+          aria-label="Notes"
           maxLength={2000}
-          className={cx(inputClass.replace("bg-field", "bg-card"), "h-auto min-h-20 py-2.5")}
+          className="block min-h-32 w-full rounded-[24px] border-2 border-transparent bg-card px-5 py-4 text-[17px] font-medium outline-none placeholder:text-faint focus:border-ink"
         />
-        <Button type="button" size="lg" block onClick={finish} disabled={saving}>
+        <Button type="button" size="xl" block onClick={finish} disabled={saving}>
           {saving ? "Saving…" : draft.pendingSync ? "Try saving again" : draft.mode === "new" ? "Finish workout" : "Save changes"}
         </Button>
-        <button type="button" onClick={discard} className={buttonClass("ghost", "md", true)}>
-          <span className="text-danger">{draft.mode === "new" ? "Discard workout" : "Discard changes"}</span>
+        <button type="button" onClick={discard} className={cx(buttonClass("ghost", "md", true), "text-danger")}>
+          {draft.mode === "new" ? "Discard workout" : "Discard changes"}
         </button>
       </div>
 
@@ -397,7 +400,7 @@ function Elapsed({ since }: { since: string }) {
     return () => window.clearInterval(t);
   }, []);
   const minutes = Math.max(0, Math.floor((now - new Date(since).getTime()) / 60000));
-  return <span className="tabular">{minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`}</span>;
+  return <span>{minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`}</span>;
 }
 
 function ExerciseCard({
@@ -449,44 +452,54 @@ function ExerciseCard({
           : [distanceUnitLabel(unit), "Time"];
 
   return (
-    <section className="mx-4 rounded-2xl bg-card pb-2">
-      <div className="flex items-start gap-2 px-4 pt-3">
+    <section className="mx-3 rounded-tile bg-card px-3 pt-5 pb-3">
+      <div className="flex items-start gap-2 px-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-[17px] font-semibold text-accent">{ex.exercise.name}</h3>
-          {bestLine && <p className="text-[13px] text-muted">{bestLine}</p>}
+          <h3 className="text-[23px] leading-tight font-extrabold tracking-tight">{ex.exercise.name}</h3>
+          {bestLine && <p className="mt-0.5 text-[14px] font-medium text-muted">{bestLine}</p>}
         </div>
-        <button type="button" onClick={onToggleMenu} aria-label={`Options for ${ex.exercise.name}`} aria-expanded={menuOpen} className="-mr-2 p-2 text-muted">
-          <Ellipsis className="size-5" />
+        <button
+          type="button"
+          onClick={onToggleMenu}
+          aria-label={`Options for ${ex.exercise.name}`}
+          aria-expanded={menuOpen}
+          className={cx("-mt-1.5 -mr-1 flex size-11 items-center justify-center rounded-full", menuOpen ? "bg-field" : "text-muted")}
+        >
+          <Ellipsis className="size-6" />
         </button>
       </div>
 
       {menuOpen && (
-        <div className="mx-4 mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-field p-2 text-[14px]">
-          <label className="flex items-center gap-1.5">
-            <Timer className="size-4 text-muted" aria-hidden />
+        <div className="mt-3 flex items-center gap-2 rounded-full bg-field p-1.5">
+          <label className="relative flex h-11 items-center gap-1.5 rounded-full bg-card pr-8 pl-3.5 text-[16px] font-bold">
+            <Timer className="size-5 text-muted" aria-hidden />
             <span className="sr-only">Rest time</span>
-            <select value={ex.restSeconds} onChange={(e) => onRest(Number(e.target.value))} className="rounded-lg bg-card px-2 py-1 text-[14px]">
+            <select value={ex.restSeconds} onChange={(e) => onRest(Number(e.target.value))} className="appearance-none bg-transparent font-bold outline-none">
               {REST_OPTIONS.map((s) => (
                 <option key={s} value={s}>
-                  {s === 0 ? "No rest timer" : `Rest ${formatDuration(s)}`}
+                  {s === 0 ? "Off" : formatDuration(s)}
                 </option>
               ))}
             </select>
+            <ChevronDown className="pointer-events-none absolute right-3 size-4" aria-hidden />
           </label>
-          <button type="button" onClick={() => onMove(-1)} className="rounded-lg bg-card p-1.5" aria-label="Move up">
-            <ArrowUp className="size-4" />
+          <button type="button" onClick={() => onMove(-1)} className="flex size-11 items-center justify-center rounded-full bg-card" aria-label="Move up">
+            <ArrowUp className="size-5" />
           </button>
-          <button type="button" onClick={() => onMove(1)} className="rounded-lg bg-card p-1.5" aria-label="Move down">
-            <ArrowDown className="size-4" />
+          <button type="button" onClick={() => onMove(1)} className="flex size-11 items-center justify-center rounded-full bg-card" aria-label="Move down">
+            <ArrowDown className="size-5" />
           </button>
-          <button type="button" onClick={onRemove} className="ml-auto flex items-center gap-1 rounded-lg bg-card px-2 py-1 text-danger">
-            <Trash2 className="size-4" aria-hidden /> Remove
+          <button type="button" onClick={onRemove} className="ml-auto flex h-11 items-center gap-1.5 rounded-full bg-card px-4 text-[16px] font-bold text-danger">
+            <Trash2 className="size-5" aria-hidden /> Remove
           </button>
         </div>
       )}
 
-      <div className="mt-2 px-2">
-        <div className="grid items-center gap-1.5 px-2 pb-1 text-[12px] font-semibold tracking-wide text-muted uppercase" style={{ gridTemplateColumns: gridFor(columns.length) }}>
+      <div className="mt-3">
+        <div
+          className="grid items-center gap-1.5 px-2 pb-1.5 font-mono text-[12px] tracking-[0.08em] text-muted uppercase"
+          style={{ gridTemplateColumns: gridFor(columns.length) }}
+        >
           <span className="text-center">Set</span>
           <span>Previous</span>
           {columns.map((c) => (
@@ -496,62 +509,66 @@ function ExerciseCard({
           ))}
           <span className="sr-only">Done</span>
         </div>
-        {ex.sets.map((set, i) => {
-          const prev = snapshot?.lastSets[i];
-          const placeholder = prev ? toInputs(prev, unit) : { weight: "", reps: ex.targetReps ? String(ex.targetReps) : "", duration: "", distance: "" };
-          const isPR = prs.has(set.key);
-          const workingIndex = ex.sets.slice(0, i + 1).filter((s) => !s.warmup).length;
-          return (
-            <div
-              key={set.key}
-              className={cx("grid items-center gap-1.5 rounded-xl px-2 py-1", set.done && (isPR ? "bg-pr-soft" : "bg-accent-soft"))}
-              style={{ gridTemplateColumns: gridFor(columns.length) }}
-            >
-              <button
-                type="button"
-                onClick={() => onChangeSet(i, { warmup: !set.warmup })}
-                aria-label={set.warmup ? "Warm-up set (tap to make a working set)" : `Set ${workingIndex} (tap to mark as warm-up)`}
-                className={cx("h-9 rounded-lg text-[15px] font-semibold tabular", set.warmup ? "text-warn" : "text-fg")}
+        <div className="space-y-1.5">
+          {ex.sets.map((set, i) => {
+            const prev = snapshot?.lastSets[i];
+            const placeholder = prev ? toInputs(prev, unit) : { weight: "", reps: ex.targetReps ? String(ex.targetReps) : "", duration: "", distance: "" };
+            const isPR = prs.has(set.key) && set.done;
+            const workingIndex = ex.sets.slice(0, i + 1).filter((s) => !s.warmup).length;
+            const tone = isPR ? "pr" : set.done ? "done" : "open";
+            return (
+              <div
+                key={set.key}
+                className={cx("grid items-center gap-1.5 rounded-[20px] px-2 py-1.5", tone === "pr" && "bg-todos", tone === "done" && "bg-done")}
+                style={{ gridTemplateColumns: gridFor(columns.length) }}
               >
-                {isPR && set.done ? <Trophy className="mx-auto size-4 text-pr" aria-label="Personal record" /> : set.warmup ? "W" : workingIndex}
-              </button>
-              <span className="truncate text-[13px] text-muted tabular">{previousHint(kind, prev, unit)}</span>
-              {(kind === "weight_reps" || kind === "bodyweight_reps") && (
-                <>
-                  <SetInput value={set.weight} placeholder={placeholder.weight || (kind === "bodyweight_reps" ? "0" : "")} inputMode="decimal" label="Weight" onChange={(v) => onChangeSet(i, { weight: v })} />
-                  <SetInput value={set.reps} placeholder={placeholder.reps} inputMode="numeric" label="Reps" onChange={(v) => onChangeSet(i, { reps: v.replace(/\D/g, "") })} />
-                </>
-              )}
-              {kind === "duration" && (
-                <SetInput value={set.duration} placeholder={placeholder.duration || "m:ss"} inputMode="text" label="Time" onChange={(v) => onChangeSet(i, { duration: v })} />
-              )}
-              {kind === "distance_time" && (
-                <>
-                  <SetInput value={set.distance} placeholder={placeholder.distance} inputMode="decimal" label="Distance" onChange={(v) => onChangeSet(i, { distance: v })} />
-                  <SetInput value={set.duration} placeholder={placeholder.duration || "m:ss"} inputMode="text" label="Time" onChange={(v) => onChangeSet(i, { duration: v })} />
-                </>
-              )}
-              <button
-                type="button"
-                onClick={() => onToggleDone(i)}
-                aria-pressed={set.done}
-                aria-label={set.done ? "Mark set not done" : "Mark set done"}
-                className={cx("flex h-9 w-full items-center justify-center rounded-lg", set.done ? "bg-accent text-accent-fg" : "bg-field text-faint")}
-              >
-                <Check className="size-5" strokeWidth={3} />
-              </button>
-            </div>
-          );
-        })}
-        {ex.sets.length > 0 && (
-          <SetSummary kind={kind} sets={ex.sets} unit={unit} />
-        )}
-        <div className="flex gap-2 px-2 pt-1">
-          <button type="button" onClick={onAddSet} className="h-9 flex-1 rounded-lg bg-field text-[14px] font-semibold">
+                <button
+                  type="button"
+                  onClick={() => onChangeSet(i, { warmup: !set.warmup })}
+                  aria-label={set.warmup ? "Warm-up set (tap to make a working set)" : `Set ${workingIndex} (tap to mark as warm-up)`}
+                  className={cx("flex h-11 items-center justify-center text-[18px] font-extrabold", set.warmup && "text-danger")}
+                >
+                  {isPR ? <Trophy className="size-5" aria-label="Personal record" /> : set.warmup ? "W" : workingIndex}
+                </button>
+                <span className="truncate font-mono text-[14px] text-muted">{previousHint(kind, prev, unit)}</span>
+                {(kind === "weight_reps" || kind === "bodyweight_reps") && (
+                  <>
+                    <SetInput tone={tone} value={set.weight} placeholder={placeholder.weight || (kind === "bodyweight_reps" ? "0" : "")} inputMode="decimal" label="Weight" onChange={(v) => onChangeSet(i, { weight: v })} />
+                    <SetInput tone={tone} value={set.reps} placeholder={placeholder.reps} inputMode="numeric" label="Reps" onChange={(v) => onChangeSet(i, { reps: v.replace(/\D/g, "") })} />
+                  </>
+                )}
+                {kind === "duration" && (
+                  <SetInput tone={tone} value={set.duration} placeholder={placeholder.duration || "m:ss"} inputMode="text" label="Time" onChange={(v) => onChangeSet(i, { duration: v })} />
+                )}
+                {kind === "distance_time" && (
+                  <>
+                    <SetInput tone={tone} value={set.distance} placeholder={placeholder.distance} inputMode="decimal" label="Distance" onChange={(v) => onChangeSet(i, { distance: v })} />
+                    <SetInput tone={tone} value={set.duration} placeholder={placeholder.duration || "m:ss"} inputMode="text" label="Time" onChange={(v) => onChangeSet(i, { duration: v })} />
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onToggleDone(i)}
+                  aria-pressed={set.done}
+                  aria-label={set.done ? "Mark set not done" : "Mark set done"}
+                  className={cx(
+                    "flex h-11 w-full items-center justify-center rounded-[14px] transition active:scale-95",
+                    tone === "pr" ? "bg-ink text-todos" : tone === "done" ? "bg-done-ink text-done" : "border-2 border-ink bg-card text-ink",
+                  )}
+                >
+                  <Check className="size-5" strokeWidth={3} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        {ex.sets.length > 0 && <SetSummary kind={kind} sets={ex.sets} unit={unit} />}
+        <div className="flex gap-2 pt-3">
+          <button type="button" onClick={onAddSet} className="h-12 flex-1 rounded-full bg-field text-[16px] font-bold active:opacity-80">
             + Add set
           </button>
           {ex.sets.length > 0 && (
-            <button type="button" onClick={onRemoveSet} className="h-9 rounded-lg bg-field px-3 text-[14px] text-muted" aria-label="Remove last set">
+            <button type="button" onClick={onRemoveSet} className="h-12 rounded-full bg-field px-5 text-[16px] font-bold text-muted active:opacity-80" aria-label="Remove last set">
               − Set
             </button>
           )}
@@ -562,7 +579,9 @@ function ExerciseCard({
 }
 
 function gridFor(inputColumns: number) {
-  return inputColumns === 2 ? "2.25rem minmax(3.5rem,1fr) 1fr 1fr 2.75rem" : "2.25rem minmax(3.5rem,1fr) 1.5fr 2.75rem";
+  return inputColumns === 2
+    ? "2rem minmax(3rem,1fr) minmax(0,1.15fr) minmax(0,0.85fr) 2.75rem"
+    : "2rem minmax(3rem,1fr) minmax(0,1.6fr) 2.75rem";
 }
 
 /** One-line recap of the best working set so far, e.g. "Top set 82.5 kg × 5 · est. 1RM 96 kg". */
@@ -575,7 +594,7 @@ function SetSummary({ kind, sets, unit }: { kind: DraftExercise["exercise"]["kin
   }, null);
   if (!best || best.e === 0) return null;
   return (
-    <p className="px-2 pt-1 text-[12px] text-muted">
+    <p className="px-2 pt-2.5 text-[14px] font-medium text-muted">
       Top set {formatWeight(best.v.weight_kg ?? 0, unit)} × {best.v.reps} · est. 1RM {formatWeight(best.e, unit)}
     </p>
   );
@@ -586,12 +605,14 @@ function SetInput({
   placeholder,
   inputMode,
   label,
+  tone,
   onChange,
 }: {
   value: string;
   placeholder: string;
   inputMode: "decimal" | "numeric" | "text";
   label: string;
+  tone: "open" | "done" | "pr";
   onChange: (v: string) => void;
 }) {
   return (
@@ -603,7 +624,10 @@ function SetInput({
       autoComplete="off"
       onChange={(e) => onChange(e.target.value)}
       onFocus={(e) => e.target.select()}
-      className="h-9 w-full min-w-0 rounded-lg bg-field px-1 text-center text-[16px] font-semibold tabular placeholder:font-normal placeholder:text-faint outline-none focus:ring-2 focus:ring-accent/60"
+      className={cx(
+        "h-11 w-full min-w-0 rounded-[14px] border-2 border-transparent px-1 text-center text-[18px] font-extrabold outline-none placeholder:font-semibold placeholder:text-faint focus:border-ink",
+        tone === "open" ? "bg-field" : "bg-white/55",
+      )}
     />
   );
 }
@@ -641,21 +665,27 @@ function RestTimer({
 
   const pct = Math.max(0, Math.min(1, remaining / rest.total));
   return (
-    <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+64px)] z-30 mx-auto max-w-xl px-3 pb-2">
-      <div className="overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ring-border">
-        <div className="h-1 bg-accent transition-[width] duration-200" style={{ width: `${pct * 100}%` }} />
-        <div className="flex items-center gap-2 px-3 py-2">
-          <Timer className="size-5 text-accent" aria-hidden />
-          <span className="flex-1 text-[20px] font-semibold tabular" role="timer" aria-live="off">
+    <div className="fixed inset-x-3 bottom-[calc(var(--tabbar-bottom)+var(--tabbar-h)+10px)] z-30 mx-auto max-w-[552px]">
+      <div className="overflow-hidden rounded-[26px] bg-ink text-white shadow-[0_10px_30px_rgba(23,21,15,0.25)]">
+        <div className="h-1.5 bg-white/15">
+          <div className="h-full bg-training transition-[width] duration-200" style={{ width: `${pct * 100}%` }} />
+        </div>
+        <div className="flex items-center gap-2 py-2.5 pr-2.5 pl-4">
+          <Timer className="size-6 text-training" aria-hidden />
+          <span className="flex-1 text-[28px] font-extrabold tracking-tight" role="timer" aria-live="off">
             {remaining > 0 ? formatDuration(remaining) : "Rest done"}
           </span>
-          <button type="button" className="h-9 rounded-lg bg-field px-3 text-[14px] font-semibold" onClick={() => onChange({ ...rest, endsAt: rest.endsAt - 15_000 })}>
+          <button type="button" className="h-11 rounded-full bg-white/15 px-4 text-[16px] font-bold" onClick={() => onChange({ ...rest, endsAt: rest.endsAt - 15_000 })}>
             −15
           </button>
-          <button type="button" className="h-9 rounded-lg bg-field px-3 text-[14px] font-semibold" onClick={() => onChange({ endsAt: Math.max(rest.endsAt, Date.now()) + 15_000, total: rest.total + 15 })}>
+          <button
+            type="button"
+            className="h-11 rounded-full bg-white/15 px-4 text-[16px] font-bold"
+            onClick={() => onChange({ endsAt: Math.max(rest.endsAt, Date.now()) + 15_000, total: rest.total + 15 })}
+          >
             +15
           </button>
-          <button type="button" className="h-9 rounded-lg px-2 text-[14px] font-semibold text-accent" onClick={() => onChange(null)}>
+          <button type="button" className="h-11 rounded-full bg-training px-4 text-[16px] font-bold text-training-ink" onClick={() => onChange(null)}>
             Skip
           </button>
         </div>

@@ -38,9 +38,9 @@ export default async function EditTodoPage({ params }: { params: Promise<{ id: s
             : null,
         }}
       />
-      <form action={deleteTodo} className="mx-4 mt-6">
+      <form action={deleteTodo} className="mx-3 mt-2.5">
         <input type="hidden" name="id" value={todo.id} />
-        <ConfirmButton message={`Delete “${todo.title}” and its reminder?`} block>
+        <ConfirmButton message={`Delete “${todo.title}” and its reminder?`} size="xl" block>
           Delete to-do
         </ConfirmButton>
       </form>

@@ -32,9 +32,9 @@ export default async function ReminderPage({ params }: { params: Promise<{ id: s
           enabled: r.enabled,
         }}
       />
-      <form action={deleteReminder} className="mx-4 mt-6">
+      <form action={deleteReminder} className="mx-3 mt-2.5">
         <input type="hidden" name="id" value={r.id} />
-        <ConfirmButton message="Delete this reminder?" block>
+        <ConfirmButton message="Delete this reminder?" size="xl" block>
           Delete reminder
         </ConfirmButton>
       </form>

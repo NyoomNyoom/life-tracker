@@ -4,8 +4,8 @@ import { useActionState, useState } from "react";
 import { updateProfile } from "@/app/(app)/settings/actions";
 import { useDeviceTimezone, useTimezones } from "@/lib/use-device";
 import type { ActionResult } from "@/lib/viewer";
-import { FormError, Segmented, SubmitButton } from "./form-controls";
-import { Field, Input, Select } from "./ui";
+import { FormError, Segmented, SubmitButton, Switch } from "./form-controls";
+import { Field, Input, Notice, Select } from "./ui";
 
 export function ProfileForm({
   initial,
@@ -15,24 +15,25 @@ export function ProfileForm({
   const [state, action] = useActionState<ActionResult, FormData>(updateProfile, null);
   const [unit, setUnit] = useState(initial.unit);
   const [timezone, setTimezone] = useState(initial.timezone);
+  const [milestones, setMilestones] = useState(initial.notify_milestones);
   const allZones = useTimezones();
   const zones = allZones.includes(timezone) ? allZones : [timezone, ...allZones];
   const device = useDeviceTimezone();
 
   return (
-    <form action={action} className="space-y-4 p-4">
+    <form action={action} className="space-y-5">
       <Field label="Name">
         <Input name="display_name" defaultValue={initial.display_name ?? ""} maxLength={60} placeholder="Optional" />
       </Field>
       <div>
-        <span className="mb-1.5 block text-[14px] font-medium text-muted">Units</span>
-        <Segmented name="unit" value={unit} onChange={setUnit} options={[{ value: "kg", label: "kg · km" }, { value: "lb", label: "lb · mi" }]} />
+        <span className="mb-2 block text-[15px] font-bold">Units</span>
+        <Segmented label="Units" name="unit" value={unit} onChange={setUnit} options={[{ value: "kg", label: "kg · km" }, { value: "lb", label: "lb · mi" }]} />
       </div>
       <Field
         label="Timezone"
         hint={
           device && device !== timezone ? (
-            <button type="button" className="font-semibold text-accent" onClick={() => setTimezone(device)}>
+            <button type="button" className="font-bold underline underline-offset-4" onClick={() => setTimezone(device)}>
               Use this device&apos;s timezone ({device})
             </button>
           ) : (
@@ -57,16 +58,16 @@ export function ProfileForm({
           ))}
         </Select>
       </Field>
-      <label className="flex items-center justify-between gap-3 text-[16px]">
+      <div className="flex items-center justify-between gap-4">
         <span>
-          Checkpoint &amp; medal notifications
-          <span className="block text-[13px] text-muted">A push when you reach a challenge checkpoint or finish one.</span>
+          <span className="block text-[18px] leading-snug font-bold">Checkpoint &amp; medal notifications</span>
+          <span className="mt-0.5 block text-[14px] font-medium text-muted">A push when you reach a challenge checkpoint or finish one.</span>
         </span>
-        <input type="checkbox" name="notify_milestones" defaultChecked={initial.notify_milestones} className="size-5 shrink-0 accent-[var(--accent)]" />
-      </label>
+        <Switch name="notify_milestones" label="Checkpoint and medal notifications" checked={milestones} onChange={setMilestones} />
+      </div>
       <FormError message={state && !state.ok ? state.error : null} />
-      {state?.ok && <p className="text-[14px] font-medium text-accent">Saved ✓</p>}
-      <SubmitButton>Save</SubmitButton>
+      {state?.ok && <Notice tone="success">Saved.</Notice>}
+      <SubmitButton size="xl">Save</SubmitButton>
     </form>
   );
 }

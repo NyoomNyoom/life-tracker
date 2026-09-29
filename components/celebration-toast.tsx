@@ -13,7 +13,7 @@ export function CelebrationToast({ keys, onDone }: { keys: string[]; onDone: () 
   if (keys.length === 0) return null;
   return (
     <div className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+8px)] z-50 mx-auto max-w-xl px-3" onClick={onDone}>
-      <div className="rounded-2xl bg-card shadow-xl ring-1 ring-border">
+      <div className="rounded-tile shadow-[0_16px_40px_rgba(23,21,15,0.3)]">
         <Celebration keys={keys} floating />
       </div>
     </div>

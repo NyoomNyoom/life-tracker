@@ -24,7 +24,7 @@ export function WeightChart({ entries, unit, today }: { entries: { date: string;
   }, [entries, unit, range, today]);
 
   return (
-    <div className="space-y-3 px-4 pb-4">
+    <div className="space-y-4">
       <Segmented
         value={range}
         onChange={setRange}
@@ -36,13 +36,13 @@ export function WeightChart({ entries, unit, today }: { entries: { date: string;
         ]}
       />
       {raw.length === 0 ? (
-        <p className="py-10 text-center text-[14px] text-muted">No weigh-ins in this range.</p>
+        <p className="py-10 text-center text-[15px] font-medium text-muted">No weigh-ins in this range.</p>
       ) : (
         <>
           {change != null && (
-            <p className="text-[14px] text-muted">
+            <p className="text-[16px] font-medium text-muted">
               7-day average {change <= 0 ? "down" : "up"}{" "}
-              <span className="font-semibold text-fg tabular">
+              <span className="font-extrabold text-ink">
                 {formatNumber(Math.abs(change), 1)} {unit}
               </span>{" "}
               over this range
@@ -52,9 +52,10 @@ export function WeightChart({ entries, unit, today }: { entries: { date: string;
             ariaLabel={`Body weight in ${unit}, daily weigh-ins and 7-day average`}
             formatValue={(v) => formatNumber(v, 1)}
             endLabelSeries="avg"
+            endLabelPosition="right"
             series={[
               { id: "raw", label: "Daily weigh-in", color: "var(--chart-raw)", mark: "dots", points: raw },
-              { id: "avg", label: "7-day average", color: "var(--chart-trend)", mark: "line", points: avg },
+              { id: "avg", label: "7-day average", color: "var(--weight)", mark: "line", points: avg, lastPoint: { fill: "var(--weight)", ring: "var(--chart-surface)" } },
             ]}
           />
         </>

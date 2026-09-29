@@ -1,28 +1,35 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bell, CheckCircle2, Dumbbell, Flame, ListChecks, Play, Route, Scale, Smile } from "lucide-react";
-import { ChallengeCard } from "@/components/challenge-card";
+import { Check, Play } from "lucide-react";
+import { ChallengeRoute, ChallengeTrack } from "@/components/challenge-track";
 import { InstallHint } from "@/components/install-hint";
 import { PendingWorkoutBanner } from "@/components/pending-workout-banner";
 import { ReminderSkip } from "@/components/reminder-skip";
 import { Sparkline } from "@/components/sparkline";
 import { TeethTracker } from "@/components/teeth-tracker";
 import { TodoCheck } from "@/components/todo-check";
-import { Badge, Card, CardHeader, LinkButton, Notice } from "@/components/ui";
+import { Badge, LinkButton, Notice, Rows, Tile, TileHeader, TileLink, cx } from "@/components/ui";
 import { WeightLogForm } from "@/components/weight-log-form";
 import { addDays, formatTimeOfDay, nowIn, parseISODate } from "@/lib/dates";
 import { loadChallenges } from "@/lib/challenge-data";
+import { formatJourney } from "@/lib/challenges";
 import { brushingStats, type BrushLog } from "@/lib/habits";
 import { appliesOn, dueInstant, type ReminderKind } from "@/lib/reminders/engine";
 import { isOverdue, occursOn } from "@/lib/todos";
 import { movingAverage, weeklyStats } from "@/lib/training";
-import { formatNumber, formatWeight, fromKg, inputValue } from "@/lib/units";
+import { formatNumber, fromKg, inputValue } from "@/lib/units";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Today" };
 
 function greeting(hour: number) {
   return hour < 5 ? "Hey night owl" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
+
+/** "642 km" → ["642", "km"] so the number can be the hero. */
+function splitUnit(text: string): [string, string] {
+  const i = text.lastIndexOf(" ");
+  return [text.slice(0, i), text.slice(i + 1)];
 }
 
 export default async function TodayPage({ searchParams }: { searchParams: Promise<{ password?: string }> }) {
@@ -46,7 +53,8 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   ]);
 
   // Teeth
-  const brush = brushingStats((brushing.data ?? []) as BrushLog[], today);
+  const brushLogs = (brushing.data ?? []) as BrushLog[];
+  const brush = brushingStats(brushLogs, today);
   const activeChallenges = challenges.joined.filter((j) => !j.progress.complete);
 
   // Weight
@@ -67,6 +75,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const todoList = todos.data ?? [];
   const dueToday = todoList.filter((t) => occursOn(t, today));
   const overdue = todoList.filter((t) => t.due_date && isOverdue(t, today, doneOn.has(`${t.id}|${t.due_date}`)));
+  const todoRows = [...overdue.map((t) => ({ t, date: t.due_date!, overdue: true })), ...dueToday.map((t) => ({ t, date: today, overdue: false }))];
 
   // Today's reminders and where each one stands.
   const todoById = new Map(todoList.map((t) => [t.id, t]));
@@ -95,214 +104,228 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     .sort((a, b) => a.time_of_day.localeCompare(b.time_of_day));
   const needsPush = todaysReminders.some((r) => r.channel !== "email") && !devices.count;
 
+  // "N things left today": open to-dos, unbrushed slots (once you track brushing), and a weigh-in or
+  // workout that a reminder says is due today.
+  const tracksTeeth = brushLogs.length > 0 || todaysReminders.some((r) => r.kind === "teeth");
+  const thingsLeft =
+    todoRows.filter(({ t, date }) => !doneOn.has(`${t.id}|${date}`)).length +
+    (tracksTeeth ? Number(!brush.today.morning) + Number(!brush.today.night) : 0) +
+    todaysReminders.filter((r) => (r.kind === "weight" || r.kind === "workout") && r.status !== "done" && r.status !== "skipped").length;
+
   const name = profile.display_name?.split(" ")[0];
+  const [featured, ...others] = activeChallenges;
 
   return (
     <>
-      <header className="px-4 pt-4 pb-3">
-        <p className="text-[13px] font-semibold tracking-wide text-muted uppercase">{parseISODate(today).toFormat("cccc d LLLL")}</p>
-        <h1 className="text-[28px] font-bold tracking-tight">
+      <header className="px-5 pt-5 pb-5">
+        <p className="text-[16px] font-medium text-muted">{parseISODate(today).toFormat("cccc d LLLL")}</p>
+        <h1 className="display mt-2 text-[40px]">
           {greeting(now.hour)}
-          {name ? `, ${name}` : ""}
+          {name ? `, ${name}.` : "."}
         </h1>
+        <p className="display text-[40px] text-faint">
+          {thingsLeft === 0 ? "All done for today." : `${thingsLeft} thing${thingsLeft === 1 ? "" : "s"} left today.`}
+        </p>
       </header>
 
-      {password === "updated" && (
-        <div className="mx-4 mb-4">
-          <Notice tone="accent">Password updated.</Notice>
-        </div>
-      )}
+      {password === "updated" && <Notice tone="success" className="mx-3 mb-2.5">Password updated.</Notice>}
       <InstallHint />
       <PendingWorkoutBanner userId={userId} />
 
-      {/* Weight */}
-      <Card>
-        <CardHeader
-          title="Weight"
-          icon={<Scale className="size-4" aria-hidden />}
-          action={
-            <Link href="/weight" className="text-[14px] font-medium text-accent">
-              Trend
+      <div className="mx-3 mb-2.5 grid grid-cols-2 gap-2.5">
+        {/* Weight */}
+        {todayWeight ? (
+          <Link href="/weight" className="flex flex-col rounded-tile bg-weight p-5 text-weight-ink active:opacity-90" aria-label="Weight trend">
+            <span className="text-[15px] font-semibold">Weight · {unit}</span>
+            <span className="tile-number mt-5 text-[56px]">{formatNumber(fromKg(todayWeight.value, unit), 1)}</span>
+            <span className="mt-2 text-[15px] leading-snug font-semibold">
+              {avgNow && <>7-day avg {formatNumber(fromKg(avgNow.value, unit), 1)}</>}
+              {avgDelta != null && Math.abs(avgDelta) >= 0.05 && (
+                <span className="block">
+                  {avgDelta < 0 ? "↓" : "↑"} {formatNumber(Math.abs(fromKg(avgDelta, unit)), 1)} vs last week
+                </span>
+              )}
+            </span>
+            <Sparkline values={avg.slice(-30).map((p) => p.value)} className="mt-auto block h-auto w-full pt-4" />
+          </Link>
+        ) : (
+          <Tile tone="weight" flush>
+            <Link href="/weight" className="block text-[15px] font-semibold">
+              Weight · {unit}
             </Link>
-          }
-        />
-        <div className="px-4 pb-4">
-          {todayWeight ? (
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-[34px] leading-tight font-semibold">{formatWeight(todayWeight.value, unit)}</p>
-                <p className="text-[14px] text-muted">
-                  {avgNow && `7-day avg ${formatWeight(avgNow.value, unit)}`}
-                  {avgDelta != null && Math.abs(avgDelta) >= 0.05 && ` · ${avgDelta < 0 ? "↓" : "↑"} ${formatNumber(Math.abs(fromKg(avgDelta, unit)), 1)} vs last week`}
-                </p>
-              </div>
-              <Sparkline values={avg.slice(-30).map((p) => p.value)} />
-            </div>
-          ) : (
-            <WeightLogForm unit={unit} today={today} compact defaultValue={weightList.length ? inputValue(weightList.at(-1)!.value, unit) : undefined} />
-          )}
-        </div>
-      </Card>
+            <p className="mt-1 mb-4 text-[14px] font-medium text-white/75">
+              {weightList.length ? `Last ${formatNumber(fromKg(weightList.at(-1)!.value, unit), 1)}. ` : ""}Log today&apos;s:
+            </p>
+            <WeightLogForm unit={unit} today={today} defaultValue={weightList.length ? inputValue(weightList.at(-1)!.value, unit) : undefined} />
+          </Tile>
+        )}
 
-      {/* Teeth */}
-      <Card>
-        <CardHeader
-          title="Teeth"
-          icon={<Smile className="size-4" aria-hidden />}
-          action={
-            <Link href="/teeth" className="flex items-center gap-1 text-[14px] font-medium text-accent">
-              {brush.streak > 0 && <Flame className="size-4 text-warn" aria-hidden />}
-              {brush.streak > 0 ? `${brush.streak}-day streak` : "History"}
+        {/* Teeth */}
+        <Tile tone="teeth" flush className="flex flex-col">
+          <div className="mb-auto flex items-center justify-between gap-2 pb-5">
+            <Link href="/teeth" className="text-[15px] font-semibold">
+              Teeth
             </Link>
-          }
-        />
-        <TeethTracker date={today} day={brush.today} />
-      </Card>
+            {brush.streak > 0 && <Badge tone="teeth">{brush.streak} day{brush.streak === 1 ? "" : "s"}</Badge>}
+          </div>
+          <TeethTracker date={today} day={brush.today} compact />
+        </Tile>
+      </div>
 
       {/* Training */}
-      <Card>
-        <CardHeader title="Training" icon={<Dumbbell className="size-4" aria-hidden />} />
-        <div className="grid grid-cols-3 gap-2 px-4 pt-1 pb-3 text-center">
-          <div className="rounded-xl bg-field py-2">
-            <p className="text-[22px] font-semibold">
-              {stats.thisWeek}
-              <span className="text-[15px] text-muted">/{stats.goal}</span>
-            </p>
-            <p className="text-[12px] text-muted">this week</p>
-          </div>
-          <div className="rounded-xl bg-field py-2">
-            <p className="flex items-center justify-center gap-1 text-[22px] font-semibold">
-              {stats.streakWeeks > 0 && <Flame className="size-5 text-warn" aria-hidden />}
-              {stats.streakWeeks}
-            </p>
-            <p className="text-[12px] text-muted">week streak</p>
-          </div>
-          <div className="rounded-xl bg-field py-2">
-            <p className="text-[22px] font-semibold">{stats.daysSinceLast ?? "—"}</p>
-            <p className="text-[12px] text-muted">{stats.daysSinceLast === 1 ? "day since last" : "days since last"}</p>
-          </div>
-        </div>
-        <div className="space-y-2 px-4 pb-4">
-          {todaysWorkouts.map((w) => (
-            <Link key={w.id} href={`/workouts/${w.id}`} className="flex items-center gap-2 rounded-xl bg-accent-soft px-3 py-2.5 text-accent">
-              <CheckCircle2 className="size-5" aria-hidden />
-              <span className="flex-1 font-semibold">{w.name}</span>
-              <span className="text-[13px]">done today</span>
-            </Link>
-          ))}
-          <LinkButton href="/workouts/new" variant={todaysWorkouts.length ? "secondary" : "primary"} block>
-            <Play className="size-4" aria-hidden /> {todaysWorkouts.length ? "Log another workout" : "Start workout"}
-          </LinkButton>
-          {routines.data && routines.data.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {routines.data.map((r) => (
-                <Link key={r.id} href={`/workouts/new?routine=${r.id}`} className="rounded-full bg-field px-3 py-1.5 text-[14px] font-medium">
-                  {r.name}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Challenges */}
-      <Card>
-        <CardHeader
-          title="Challenges"
-          icon={<Route className="size-4" aria-hidden />}
-          action={
-            <Link href="/challenges" className="text-[14px] font-medium text-accent">
-              {activeChallenges.length ? "All" : "Browse"}
-            </Link>
-          }
-        />
-        {activeChallenges.length ? (
-          <div className="divide-y divide-border pb-1">
-            {activeChallenges.slice(0, 2).map((j) => (
-              <ChallengeCard key={j.challenge.slug} entry={j} unit={unit} />
+      <Tile tone="training">
+        <TileHeader title="Training" tight />
+        <p className="display text-[34px]">
+          {stats.thisWeek} of {stats.goal} this week
+        </p>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="flex shrink-0 gap-1.5" aria-hidden>
+            {Array.from({ length: Math.max(stats.goal, stats.thisWeek) }, (_, i) => (
+              <span key={i} className={cx("rounded-full border-[2.5px] border-ink", stats.goal > 5 ? "size-5" : "size-7", i < stats.thisWeek && "bg-ink")} />
             ))}
           </div>
+          <p className="text-[15px] leading-snug font-semibold">
+            {[
+              stats.streakWeeks > 0 ? `${stats.streakWeeks}-week streak` : null,
+              stats.daysSinceLast == null ? null : stats.daysSinceLast === 0 ? "trained today" : `${stats.daysSinceLast} day${stats.daysSinceLast === 1 ? "" : "s"} since last`,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Your first workout starts the streak"}
+          </p>
+        </div>
+        {todaysWorkouts.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {todaysWorkouts.map((w) => (
+              <Link key={w.id} href={`/workouts/${w.id}`} className="flex h-12 items-center gap-2 rounded-full bg-white/30 px-5 font-bold active:opacity-80">
+                <Check className="size-5" strokeWidth={3} aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{w.name}</span>
+                <span className="text-[14px] font-semibold">done today</span>
+              </Link>
+            ))}
+          </div>
+        )}
+        <LinkButton href="/workouts/new" size="lg" block className="mt-4">
+          <Play className="size-5 fill-current" aria-hidden /> {todaysWorkouts.length ? "Log another workout" : "Start workout"}
+        </LinkButton>
+        {routines.data && routines.data.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {routines.data.map((r) => (
+              <Link key={r.id} href={`/workouts/new?routine=${r.id}`} className="flex h-12 items-center rounded-full border-2 border-ink px-5 text-[16px] font-bold active:bg-ink/10">
+                {r.name}
+              </Link>
+            ))}
+          </div>
+        )}
+      </Tile>
+
+      {/* Challenges */}
+      <Tile tone="challenges">
+        <TileHeader title={<span className="text-white">Challenges</span>} action={<TileLink href="/challenges">{activeChallenges.length ? "All" : "Browse"}</TileLink>} />
+        {featured ? (
+          <>
+            <Link href={`/challenges/${featured.challenge.slug}`} className="block active:opacity-80">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-[20px] font-extrabold text-white">{featured.challenge.name}</span>
+                <span className="font-mono text-[14px]">{Math.floor(featured.progress.fraction * 100)}%</span>
+              </div>
+              {(() => {
+                const [km, u] = splitUnit(formatJourney(featured.progress.km, unit));
+                return (
+                  <p className="mt-1 flex items-baseline gap-1.5">
+                    <span className="tile-number text-[56px]">{km}</span>
+                    <span className="text-[22px] font-bold">
+                      / {splitUnit(formatJourney(featured.challenge.km, unit))[0]} {u}
+                    </span>
+                  </p>
+                );
+              })()}
+              <div className="my-3">
+                <ChallengeRoute fraction={featured.progress.fraction} label={`${featured.challenge.name} route progress`} />
+              </div>
+              <p className="text-[16px] font-bold text-white">
+                {featured.progress.next!.id === "finish" ? "Finish" : featured.progress.next!.name} in {formatJourney(featured.progress.toNextKm, unit)}
+              </p>
+            </Link>
+            {others.slice(0, 1).map((j) => (
+              <Link key={j.challenge.slug} href={`/challenges/${j.challenge.slug}`} className="mt-4 block border-t border-challenges-ink/20 pt-4 active:opacity-80">
+                <div className="mb-2.5 flex items-baseline justify-between gap-2">
+                  <span className="truncate text-[17px] font-bold text-white">{j.challenge.name}</span>
+                  <span className="font-mono text-[14px]">{Math.floor(j.progress.fraction * 100)}%</span>
+                </div>
+                <ChallengeTrack challenge={j.challenge} progress={j.progress} onDark dots={false} />
+                <p className="mt-2.5 text-[14px] font-medium">
+                  {formatJourney(j.progress.km, unit).replace(/ \w+$/, "")} of {formatJourney(j.challenge.km, unit)} ·{" "}
+                  {j.progress.next!.id === "finish" ? "finish" : j.progress.next!.name} in {formatJourney(j.progress.toNextKm, unit)}
+                </p>
+              </Link>
+            ))}
+          </>
         ) : (
-          <p className="px-4 pb-4 text-[15px] text-muted">
+          <p className="text-[16px] font-medium text-white">
             Walk the length of New Zealand or take the Ring to Mordor, one logged km at a time.{" "}
-            <Link href="/challenges" className="font-semibold text-accent">
+            <Link href="/challenges" className="font-bold text-challenges-ink underline underline-offset-4">
               Start a challenge
             </Link>
           </p>
         )}
-      </Card>
+      </Tile>
 
       {/* To-dos */}
-      <Card>
-        <CardHeader
-          title="To-dos"
-          icon={<ListChecks className="size-4" aria-hidden />}
-          action={
-            <Link href="/todos" className="text-[14px] font-medium text-accent">
-              All
-            </Link>
-          }
-        />
-        {dueToday.length + overdue.length === 0 ? (
-          <p className="px-4 pb-4 text-[15px] text-muted">Nothing due today.</p>
+      <Tile tone="todos">
+        <TileHeader title="To-dos" action={<TileLink href="/todos">All</TileLink>} />
+        {todoRows.length === 0 ? (
+          <p className="py-1 text-[16px] font-medium">Nothing due today.</p>
         ) : (
-          <div className="divide-y divide-border pb-1">
-            {[...overdue.map((t) => ({ t, date: t.due_date!, overdue: true })), ...dueToday.map((t) => ({ t, date: today, overdue: false }))].map(({ t, date, overdue }) => (
-              <div key={`${t.id}|${date}`} className="flex items-center gap-3 px-4 py-2.5">
-                <TodoCheck todoId={t.id} date={date} done={doneOn.has(`${t.id}|${date}`)} title={t.title} />
-                <span className={`min-w-0 flex-1 truncate text-[16px] ${doneOn.has(`${t.id}|${date}`) ? "text-muted line-through" : ""}`}>{t.title}</span>
-                {overdue && <Badge tone="warn">Overdue</Badge>}
-              </div>
-            ))}
-          </div>
+          <Rows>
+            {todoRows.map(({ t, date, overdue }) => {
+              const done = doneOn.has(`${t.id}|${date}`);
+              return (
+                <div key={`${t.id}|${date}`} className="flex min-h-15 items-center gap-3.5 py-2">
+                  <TodoCheck todoId={t.id} date={date} done={done} title={t.title} />
+                  <span className={cx("min-w-0 flex-1 truncate text-[18px] font-medium", done && "line-through opacity-60")}>{t.title}</span>
+                  {overdue && <Badge tone="overdue">Overdue</Badge>}
+                </div>
+              );
+            })}
+          </Rows>
         )}
-      </Card>
+      </Tile>
 
       {/* Reminders */}
-      <Card>
-        <CardHeader
-          title="Reminders today"
-          icon={<Bell className="size-4" aria-hidden />}
-          action={
-            <Link href="/reminders" className="text-[14px] font-medium text-accent">
-              Manage
-            </Link>
-          }
-        />
+      <Tile tone="reminders">
+        <TileHeader title="Reminders today" action={<TileLink href="/reminders">Manage</TileLink>} />
         {todaysReminders.length === 0 ? (
-          <div className="px-4 pb-4 text-[15px] text-muted">
+          <p className="py-1 text-[16px] font-medium">
             None set for today.{" "}
-            <Link href="/reminders" className="font-semibold text-accent">
+            <Link href="/reminders" className="font-bold underline underline-offset-4">
               Add one
             </Link>{" "}
             to get nudged when you forget to weigh in or train.
-          </div>
+          </p>
         ) : (
-          <ul className="divide-y divide-border pb-1">
+          <Rows>
             {todaysReminders.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-2.5">
-                <span className="w-16 shrink-0 text-[14px] text-muted tabular">{formatTimeOfDay(r.time_of_day)}</span>
-                <span className={`min-w-0 flex-1 truncate text-[16px] ${r.status === "done" || r.status === "skipped" ? "text-muted" : ""}`}>{r.title}</span>
-                {r.status === "done" && <Badge tone="accent">Done</Badge>}
-                {r.status === "sent" && <Badge tone="warn">Sent</Badge>}
+              <div key={r.id} className="flex min-h-15 items-center gap-2.5 py-2">
+                <span className="w-16 shrink-0 font-mono text-[14px] whitespace-nowrap">{formatTimeOfDay(r.time_of_day)}</span>
+                <span className={cx("min-w-0 flex-1 truncate text-[16px] font-medium", (r.status === "done" || r.status === "skipped") && "opacity-60")}>{r.title}</span>
+                {r.status === "done" && <Badge tone="done">Done</Badge>}
+                {r.status === "sent" && <Badge tone="white">Sent</Badge>}
                 {(r.status === "upcoming" || r.status === "due" || r.status === "sent" || r.status === "skipped") && (
                   <ReminderSkip id={r.id} date={today} skipped={r.status === "skipped"} />
                 )}
-              </li>
+              </div>
             ))}
-          </ul>
+          </Rows>
         )}
         {needsPush && (
-          <div className="px-4 pb-4">
-            <Notice tone="warn">
-              Notifications aren&apos;t on for any device yet, so these will be emailed.{" "}
-              <Link href="/settings#notifications" className="font-semibold underline">
-                Turn on
-              </Link>
-            </Notice>
-          </div>
+          <p className="mt-3 rounded-[18px] bg-white/55 px-4 py-3 text-[15px] font-semibold">
+            Notifications aren&apos;t on for any device yet, so these will be emailed.{" "}
+            <Link href="/settings#notifications" className="font-bold underline underline-offset-4">
+              Turn on
+            </Link>
+          </p>
         )}
-      </Card>
+      </Tile>
     </>
   );
 }

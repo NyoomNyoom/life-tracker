@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { addDays } from "@/lib/dates";
 import {
   EMPTY_BESTS,
   estimate1RM,
@@ -109,5 +110,30 @@ describe("niceTicks", async () => {
       expect(t.at(-1)).toBeGreaterThanOrEqual(hi);
       expect(t.length).toBeLessThanOrEqual(7);
     }
+  });
+});
+
+describe("xTicksFor", async () => {
+  const { xTicksFor } = await import("@/components/line-chart");
+  const days = (from: string, n: number) => Array.from({ length: n }, (_, i) => addDays(from, i));
+
+  it("labels month starts over a long range", () => {
+    const ticks = xTicksFor(days("2026-07-01", 91));
+    expect(ticks.map((t) => t.label)).toEqual(["Jul", "Aug", "Sep"]);
+    expect(ticks.every((t) => t.month)).toBe(true);
+  });
+
+  it("skips a month start before the first point and adds the year across years", () => {
+    const ticks = xTicksFor(days("2025-11-10", 100));
+    expect(ticks[0].date).toBe("2025-12-01");
+    expect(ticks.map((t) => t.label)).toEqual(["Dec 25", "Jan 26", "Feb 26"]);
+  });
+
+  it("keeps at most five month labels", () => {
+    expect(xTicksFor(days("2024-01-01", 800)).length).toBeLessThanOrEqual(5);
+  });
+
+  it("uses first, middle and last dates over a short range", () => {
+    expect(xTicksFor(days("2026-09-01", 30)).map((t) => t.date)).toEqual(["2026-09-01", "2026-09-15", "2026-09-30"]);
   });
 });

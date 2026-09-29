@@ -11,24 +11,22 @@ export function DeleteAccount() {
   const [state, action] = useActionState<ActionResult, FormData>(deleteAccount, null);
   if (!open) {
     return (
-      <div className="p-4">
-        <Button type="button" variant="danger" block onClick={() => setOpen(true)}>
-          Delete account…
-        </Button>
-      </div>
+      <Button type="button" variant="danger" size="xl" block onClick={() => setOpen(true)}>
+        Delete account…
+      </Button>
     );
   }
   return (
-    <form action={action} className="space-y-3 p-4">
-      <p className="text-[15px]">
+    <form action={action} className="space-y-3">
+      <p className="text-[16px] font-medium">
         This permanently deletes your account and <b>all</b> workouts, weigh-ins, to-dos and reminders. Export your data first if you want a copy.
       </p>
       <Input name="confirm" placeholder="Type DELETE to confirm" autoComplete="off" autoCapitalize="characters" />
       <FormError message={state && !state.ok ? state.error : null} />
-      <SubmitButton variant="danger" pendingText="Deleting…">
+      <SubmitButton variant="bare" size="xl" pendingText="Deleting…" className="bg-danger text-white">
         Permanently delete everything
       </SubmitButton>
-      <Button type="button" variant="ghost" block onClick={() => setOpen(false)}>
+      <Button type="button" variant="secondary" size="lg" block onClick={() => setOpen(false)}>
         Cancel
       </Button>
     </form>

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Trophy } from "lucide-react";
 import { Celebration } from "@/components/celebration";
 import { ConfirmButton } from "@/components/confirm-button";
-import { Badge, Card, LinkButton, Notice, PageHeader } from "@/components/ui";
+import { Badge, LinkButton, Notice, PageHeader, Tile, cx } from "@/components/ui";
 import { friendlyDate } from "@/lib/dates";
 import { formatSet, type ExerciseKind } from "@/lib/training";
 import { getViewer } from "@/lib/viewer";
@@ -49,23 +49,23 @@ export default async function WorkoutPage({
         title={workout.name}
         subtitle={[friendlyDate(workout.workout_date, today), minutes != null && minutes > 0 && minutes < 600 ? `${minutes} min` : null].filter(Boolean).join(" · ")}
         action={
-          <LinkButton href={`/workouts/${workout.id}/edit`} variant="secondary" size="sm">
+          <LinkButton href={`/workouts/${workout.id}/edit`} size="md" variant="bare" className="bg-training text-training-ink">
             Edit
           </LinkButton>
         }
       />
       {saved && (
-        <div className="mx-4 mb-4">
-          <Notice tone="accent">
-            Workout saved{prCount > 0 ? `, with ${prCount} new personal record${prCount === 1 ? "" : "s"} 🏆` : ". Nice work!"}
-          </Notice>
-        </div>
+        <Notice tone="success" className="mx-3 mb-2.5">
+          Workout saved{prCount > 0 ? `, with ${prCount} new personal record${prCount === 1 ? "" : "s"}.` : ". Nice work!"}
+        </Notice>
       )}
 
       {earned && <Celebration keys={earned.split(",")} />}
 
       {groups.size === 0 && (
-        <Card className="px-4 py-5 text-[15px] text-muted">Logged as a gym visit with no sets.</Card>
+        <Tile>
+          <p className="text-[16px] font-medium text-muted">Logged as a gym visit with no sets.</p>
+        </Tile>
       )}
 
       {[...groups.entries()]
@@ -73,19 +73,17 @@ export default async function WorkoutPage({
         .map(([pos, g]) => {
           let working = 0;
           return (
-            <Card key={pos} className="pb-2">
-              <Link href={`/exercises/${g.exercise.id}`} className="block px-4 pt-3 pb-1 text-[17px] font-semibold text-accent">
+            <Tile key={pos} className="px-3 pb-3">
+              <Link href={`/exercises/${g.exercise.id}`} className="mb-2 block px-2 text-[23px] leading-tight font-extrabold tracking-tight active:opacity-70">
                 {g.exercise.name}
               </Link>
-              <ul>
+              <ul className="space-y-1">
                 {g.sets.map((s) => {
                   if (!s.is_warmup) working++;
                   return (
-                    <li key={s.id} className="flex items-center gap-3 px-4 py-1.5 text-[16px]">
-                      <span className={`w-6 text-center font-semibold tabular ${s.is_warmup ? "text-warn" : "text-muted"}`}>
-                        {s.is_warmup ? "W" : working}
-                      </span>
-                      <span className="flex-1 tabular">
+                    <li key={s.id} className={cx("flex min-h-12 items-center gap-3 rounded-[16px] px-2", s.is_pr && "bg-todos/55")}>
+                      <span className={cx("w-6 text-center text-[17px] font-extrabold", s.is_warmup ? "text-danger" : "text-muted")}>{s.is_warmup ? "W" : working}</span>
+                      <span className="flex-1 font-mono text-[17px]">
                         {formatSet(
                           g.exercise.kind as ExerciseKind,
                           {
@@ -99,27 +97,27 @@ export default async function WorkoutPage({
                       </span>
                       {s.is_pr && (
                         <Badge tone="pr">
-                          <Trophy className="size-3" aria-hidden /> PR
+                          <Trophy className="size-3.5" aria-hidden /> PR
                         </Badge>
                       )}
                     </li>
                   );
                 })}
               </ul>
-            </Card>
+            </Tile>
           );
         })}
 
       {workout.notes && (
-        <Card className="px-4 py-3">
-          <p className="text-[13px] font-semibold tracking-wide text-muted uppercase">Notes</p>
-          <p className="mt-1 text-[15px] whitespace-pre-wrap">{workout.notes}</p>
-        </Card>
+        <Tile>
+          <p className="text-[15px] font-semibold text-muted">Notes</p>
+          <p className="mt-1 text-[17px] font-medium whitespace-pre-wrap">{workout.notes}</p>
+        </Tile>
       )}
 
-      <form action={deleteWorkout} className="mx-4 mt-6">
+      <form action={deleteWorkout} className="mx-3 mt-5">
         <input type="hidden" name="id" value={workout.id} />
-        <ConfirmButton message="Delete this workout and all of its sets?" variant="danger" block>
+        <ConfirmButton message="Delete this workout and all of its sets?" variant="danger" size="lg" block>
           Delete workout
         </ConfirmButton>
       </form>

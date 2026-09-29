@@ -27,7 +27,7 @@ export function PushSettings({ vapidKey, deviceCount }: { vapidKey?: string; dev
   const [support, setSupport] = useState<Support>("checking");
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<{ tone: "accent" | "danger" | "neutral"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: "success" | "danger" | "neutral"; text: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +67,7 @@ export function PushSettings({ vapidKey, deviceCount }: { vapidKey?: string; dev
         return;
       }
       setSubscription(sub);
-      setMessage({ tone: "accent", text: "Notifications are on for this device." });
+      setMessage({ tone: "success", text: "Notifications are on for this device." });
     } catch (err) {
       setMessage({ tone: "danger", text: `Couldn't turn on notifications: ${(err as Error).message}` });
     } finally {
@@ -90,43 +90,45 @@ export function PushSettings({ vapidKey, deviceCount }: { vapidKey?: string; dev
     setBusy(true);
     const res = await sendTestPush();
     setBusy(false);
-    setMessage(res?.ok ? { tone: "accent", text: res.message ?? "Sent." } : { tone: "danger", text: res && !res.ok ? res.error : "Failed." });
+    setMessage(res?.ok ? { tone: "success", text: res.message ?? "Sent." } : { tone: "danger", text: res && !res.ok ? res.error : "Failed." });
   }
 
   return (
-    <div className="space-y-3 p-4">
-      {support === "checking" && <p className="text-[15px] text-muted">Checking this device…</p>}
+    <div className="space-y-3">
+      {support === "checking" && <p className="text-[16px] font-medium">Checking this device…</p>}
       {support === "needs-install" && (
-        <div className="space-y-2 text-[15px]">
-          <p>To get notifications on iPhone, add this app to your Home Screen first:</p>
-          <p className="text-muted">
+        <div className="space-y-2 text-[16px] font-medium">
+          <p className="text-[18px] font-extrabold">To get notifications on iPhone, add this app to your Home Screen first.</p>
+          <p>
             In Safari tap <Share className="inline size-4 align-[-2px]" aria-label="Share" />, then{" "}
             <SquarePlus className="inline size-4 align-[-2px]" aria-hidden /> <b>Add to Home Screen</b>. Open it from there and come back to this page.
           </p>
         </div>
       )}
-      {support === "unsupported" && <p className="text-[15px] text-muted">This browser can&apos;t receive push notifications. Email reminders still work.</p>}
+      {support === "unsupported" && <p className="text-[16px] font-medium">This browser can&apos;t receive push notifications. Email reminders still work.</p>}
       {support === "ready" && !vapidKey && <Notice tone="warn">Push isn&apos;t configured on the server yet (VAPID keys). See docs/SETUP.md.</Notice>}
       {support === "ready" && vapidKey && (
         <>
-          <p className="text-[15px]">{subscription ? "This device will get reminder notifications." : "Get reminders as notifications on this device."}</p>
+          <p className="text-[18px] leading-snug font-extrabold">
+            {subscription ? "This device will get reminder notifications." : "Get reminders as notifications on this device."}
+          </p>
           {subscription ? (
             <div className="flex gap-2">
-              <Button type="button" variant="secondary" onClick={test} disabled={busy} className="flex-1">
+              <Button type="button" variant="bare" size="lg" onClick={test} disabled={busy} className="flex-1 bg-card text-reminders-ink">
                 Send test
               </Button>
-              <Button type="button" variant="danger" onClick={disable} disabled={busy} className="flex-1">
+              <Button type="button" variant="bare" size="lg" onClick={disable} disabled={busy} className="flex-1 bg-reminders-ink text-white">
                 Turn off
               </Button>
             </div>
           ) : (
-            <Button type="button" onClick={enable} disabled={busy} block>
+            <Button type="button" variant="bare" size="lg" onClick={enable} disabled={busy} block className="bg-reminders-ink text-white">
               {busy ? "Turning on…" : "Turn on notifications"}
             </Button>
           )}
         </>
       )}
-      <p className="text-[13px] text-muted">
+      <p className="text-[15px] font-medium">
         {deviceCount} device{deviceCount === 1 ? "" : "s"} with notifications on for your account.
       </p>
       {message && <Notice tone={message.tone}>{message.text}</Notice>}

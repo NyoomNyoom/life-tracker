@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque, DM_Mono } from "next/font/google";
 import { ServiceWorker } from "@/components/service-worker";
 import "./globals.css";
+
+// The optical-size axis tightens the big display type, as the design intends.
+const bricolage = Bricolage_Grotesque({ subsets: ["latin", "latin-ext"], axes: ["opsz"], variable: "--font-bricolage", display: "swap" });
+const dmMono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-dm-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Life Tracker", template: "%s · Life Tracker" },
@@ -18,15 +23,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f2f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
+  themeColor: "#f3f2ee",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`h-full antialiased ${bricolage.variable} ${dmMono.variable}`}>
       <body className="min-h-full">
         {children}
         <ServiceWorker />

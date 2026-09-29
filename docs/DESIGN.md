@@ -118,11 +118,30 @@ Every 5 minutes, `pg_cron` calls `POST /api/cron/reminders` with `Authorization:
 
 ## Design system
 
-iOS-style grouped surfaces and one green accent, following the phone's light/dark setting. Tokens live in `app/globals.css` (`bg-bg`, `bg-card`, `text-muted`, `bg-accent`…); components never use raw colours. Charts are dependency-free SVG (`components/line-chart.tsx`): 2px lines, ringed dots, hairline grid, a legend when there are two series, and a crosshair tooltip that also works with the arrow keys. The two chart colours were validated for colour-blind separation and contrast in both modes. The history lists double as the table view.
+"Colour Block": every tracker owns one flat colour and an ink that sits on it, on a warm off-white ground. Light only.
+
+| Tracker | Fill / ink | Tailwind |
+|---------|------------|----------|
+| Weight | `#2340D8` / white | `bg-weight text-weight-ink` |
+| Training | `#FF6A3D` / ink | `bg-training text-training-ink` |
+| Teeth | `#BFDDFF` / `#0B2745` | `bg-teeth text-teeth-ink` |
+| Challenges | `#0F3B2C` / `#A6EBC6` | `bg-challenges text-challenges-ink` |
+| To-dos | `#FFE27A` / ink | `bg-todos text-todos-ink` |
+| Reminders | `#D9CCFF` / `#1E1440` | `bg-reminders text-reminders-ink` |
+| Achievements | ink / `#FFE27A` | `bg-achievements text-achievements-ink` |
+
+Surfaces are `ground` (`#F3F2EE`), `card` (white) and `field` (`#EEEDE8`); text is `ink` (`#17150F`), `muted` and `faint`; states are `done` (mint) and `danger`. Tokens live in `app/globals.css`; components never use raw colours.
+
+- **Rules of thumb.** A tracker's colour fills its tile on Today and the hero of its own page; everything else stays white or ground. Primary actions are ink pills; coloured fills are for content, not buttons (except butter for the active tab). Lead each tile with one big number, explained underneath in plain words. Targets are at least 44px.
+- **Type.** Bricolage Grotesque (with its optical-size axis) for everything, DM Mono for times, set weights and distances, tabular numerals throughout. Display 42/800 at -3%, page titles 38/800, tile numbers 52–64/800 at -4% (the `display` and `tile-number` utilities).
+- **Layout.** Tiles sit 12px from the edges and 10px apart with a 28px radius; text sits 20px in. The tab bar floats 16px from the edges; `pb-tabbar` leaves 110px under content.
+- **Components** (`components/ui.tsx`, `components/form-controls.tsx`): `Tile` (pass a `tone`), `TileHeader`, `Rows`, `ListRow`, `IconSquare`, `Badge` chips, `Notice`, pill `Button`/`LinkButton` variants (`bare` + your own colours for a tracker-coloured button), `Input`/`Select`/`Textarea` (`onTile` for a white field in a coloured tile), `Segmented` and `WeekdayPicker` (with a `tone` for the tile they sit on), and `Switch`. Size and colour go through props rather than `className` overrides, since two Tailwind classes for the same property don't reliably resolve by order.
+
+Charts are dependency-free SVG (`components/line-chart.tsx`): 3px lines, hairline grid, mono axis labels (month starts over longer ranges), the latest point emphasised and labelled, a legend under the chart when there are two series, and a crosshair tooltip that also works with the arrow keys. Each chart uses its tracker's colour. The history lists double as the table view.
 
 ## Testing
 
-- `npm test`: 59 unit tests for units, 1RM/PR logic, streaks, to-do schedules, the reminder engine (timezones, DST, grace window, follow-ups, brushing), brushing streaks, the challenge catalog and progress, achievement rules, signed links and CSV.
+- `npm test`: 64 unit tests for units, 1RM/PR logic, chart axis ticks, streaks, to-do schedules, the reminder engine (timezones, DST, grace window, follow-ups, brushing), brushing streaks, the challenge catalog and progress, achievement rules, signed links and CSV.
 - The initial build was also checked end to end against a local Supabase stack (in a real browser at iPhone size):
   - Sign-up → confirmation email → routine → workout with PRs → reload survives → offline save → auto-upload → to-dos → reminders → CSV
   - The dispatcher with a fake push service and fake Resend: push payloads decrypted and checked, dead devices removed, email fallback, no duplicates, follow-up, dismiss link

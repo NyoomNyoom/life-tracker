@@ -6,7 +6,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   await getViewer();
   return (
     <>
-      <main className="mx-auto w-full max-w-xl pt-safe pb-[calc(env(safe-area-inset-bottom)+84px)]">{children}</main>
+      <main className="mx-auto w-full max-w-xl pt-safe pb-tabbar">{children}</main>
       <TabBar />
     </>
   );

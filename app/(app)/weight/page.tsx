@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Trash2 } from "lucide-react";
 import { WeightChart } from "@/components/weight-chart";
 import { WeightLogForm } from "@/components/weight-log-form";
-import { Card, CardHeader, EmptyState } from "@/components/ui";
+import { EmptyState, PageHeader, Rows, Tile, TileHeader } from "@/components/ui";
 import { friendlyDate } from "@/lib/dates";
 import { formatWeight, inputValue, type Unit } from "@/lib/units";
 import { getViewer } from "@/lib/viewer";
@@ -23,30 +23,29 @@ export default async function WeightPage() {
 
   return (
     <>
-      <header className="px-4 pt-4 pb-3">
-        <h1 className="text-[28px] font-bold tracking-tight">Weight</h1>
-        {latest && (
-          <p className="mt-0.5 text-[15px] text-muted">
-            Latest <span className="font-semibold text-fg">{formatWeight(Number(latest.weight_kg), unit)}</span> ·{" "}
-            {friendlyDate(latest.entry_date, today)}
-          </p>
-        )}
-      </header>
+      <PageHeader
+        title="Weight"
+        subtitle={
+          latest && (
+            <>
+              Latest <span className="font-extrabold text-ink">{formatWeight(Number(latest.weight_kg), unit)}</span> · {friendlyDate(latest.entry_date, today)}
+            </>
+          )
+        }
+      />
 
-      <Card>
-        <CardHeader title={loggedToday ? "Update today" : "Log today"} />
-        <div className="px-4 pb-4">
-          <WeightLogForm unit={unit} today={today} showDate defaultValue={latest ? inputValue(Number(latest.weight_kg), unit) : undefined} />
-        </div>
-      </Card>
+      <Tile tone="weight">
+        <TileHeader title={loggedToday ? "Update today" : "Log today"} />
+        <WeightLogForm unit={unit} today={today} showDate defaultValue={latest ? inputValue(Number(latest.weight_kg), unit) : undefined} />
+      </Tile>
 
-      <Card>
-        <CardHeader title="Trend" />
+      <Tile>
+        <TileHeader title="Trend" />
         <WeightChart entries={list.map((e) => ({ date: e.entry_date, kg: Number(e.weight_kg) }))} unit={unit} today={today} />
-      </Card>
+      </Tile>
 
-      <Card>
-        <CardHeader title="History" />
+      <Tile>
+        <TileHeader title="History" />
         {list.length === 0 ? (
           <EmptyState title="No weigh-ins yet" body="Log your first one above. Weighing at the same time each morning gives the cleanest trend." />
         ) : (
@@ -54,15 +53,17 @@ export default async function WeightPage() {
             <WeightHistory entries={[...list].reverse().slice(0, 14)} unit={unit} today={today} />
             {list.length > 14 && (
               <details className="group">
-                <summary className="cursor-pointer list-none px-4 py-3 text-center text-[15px] font-medium text-accent group-open:hidden">
+                <summary className="cursor-pointer list-none border-t border-current/12 pt-4 pb-1 text-center text-[17px] font-bold underline underline-offset-4 group-open:hidden">
                   Show all {list.length} weigh-ins
                 </summary>
-                <WeightHistory entries={[...list].reverse().slice(14)} unit={unit} today={today} />
+                <div className="border-t border-current/12">
+                  <WeightHistory entries={[...list].reverse().slice(14)} unit={unit} today={today} />
+                </div>
               </details>
             )}
           </>
         )}
-      </Card>
+      </Tile>
     </>
   );
 }
@@ -77,21 +78,25 @@ function WeightHistory({
   today: string;
 }) {
   return (
-    <ul className="divide-y divide-border border-t border-border first:border-t-0">
+    <Rows>
       {entries.map((e) => (
-        <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
+        <div key={e.id} className="flex items-center gap-3 py-3">
           <div className="min-w-0 flex-1">
-            <div className="text-[16px] font-medium tabular">{formatWeight(Number(e.weight_kg), unit)}</div>
-            <div className="text-[13px] text-muted">{friendlyDate(e.entry_date, today)}</div>
+            <div className="text-[19px] font-extrabold tracking-tight">{formatWeight(Number(e.weight_kg), unit)}</div>
+            <div className="text-[15px] font-medium text-muted">{friendlyDate(e.entry_date, today)}</div>
           </div>
           <form action={deleteWeight}>
             <input type="hidden" name="id" value={e.id} />
-            <button type="submit" className="p-2 text-faint active:text-danger" aria-label={`Delete entry for ${e.entry_date}`}>
-              <Trash2 className="size-4" />
+            <button
+              type="submit"
+              className="-mr-2 flex size-11 items-center justify-center rounded-full text-muted active:bg-danger-soft active:text-danger"
+              aria-label={`Delete entry for ${e.entry_date}`}
+            >
+              <Trash2 className="size-5" />
             </button>
           </form>
-        </li>
+        </div>
       ))}
-    </ul>
+    </Rows>
   );
 }
