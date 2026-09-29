@@ -16,6 +16,8 @@ You'll create five things, in this order:
 
 Throughout this guide, replace `tracker.example.com` with your real domain (or a subdomain of it).
 
+> **No domain yet?** Start on a free `*.vercel.app` address with [DEPLOY-VERCEL-DOMAIN.md](DEPLOY-VERCEL-DOMAIN.md), which also has the checklist for switching to your own domain later.
+
 ---
 
 ## 1. Domain
@@ -93,10 +95,11 @@ Older projects show "anon" and "service_role" keys instead. Those work too: use 
 On your computer, in the repo:
 
 ```bash
-npm install
-npm run vapid            # prints a VAPID public + private key pair for push notifications
-openssl rand -hex 32     # prints a random string for CRON_SECRET
+pip install cryptography
+python scripts/generate_secrets.py   # prints CRON_SECRET and a VAPID key pair for push notifications
 ```
+
+Or with Node: `npm run vapid` for the VAPID keys and `openssl rand -hex 32` for `CRON_SECRET`.
 
 ## 6. Vercel (hosting)
 

@@ -26,6 +26,7 @@ Built with Next.js on Vercel's free Hobby tier and Supabase's free tier.
 
 ## Docs
 
+- **[docs/DEPLOY-VERCEL-DOMAIN.md](docs/DEPLOY-VERCEL-DOMAIN.md):** go live on a free `*.vercel.app` address now, and switch to your own domain later.
 - **[docs/SETUP.md](docs/SETUP.md):** step-by-step deployment (domain, Resend, Turnstile, Supabase, Vercel, scheduler, iPhone install) and local development.
 - **[docs/DESIGN.md](docs/DESIGN.md):** decisions, architecture, data model, the reminder engine, and how to add another tracker.
 
