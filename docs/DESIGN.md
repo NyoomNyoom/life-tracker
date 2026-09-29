@@ -109,6 +109,16 @@ Every 5 minutes, `pg_cron` calls `POST /api/cron/reminders` with `Authorization:
 - **Challenges.** `lib/challenges.ts` holds each route: total distance, checkpoints (the last is the finish), medal colours, and whether distances are approximate. The Middle-earth and Te Araroa figures are estimates and are labelled as such in the app. Distance can come from any workout set with a distance, including the quick "log a walk, hike, run or ride" form on `/challenges`. Joining counts distance from workouts dated that day onwards. The finish estimate uses your pace since joining (up to the last 30 days) and only appears after a week.
 - **Achievements.** `evaluateAchievements()` (`lib/achievements-server.ts`) runs after every workout save, quick log, brush tick and challenge join. It recomputes what you qualify for with the pure `qualifyingKeys()`, inserts anything new (the primary key makes it idempotent) and marks finished challenges complete. It sends up to three pushes for new checkpoints or medals, unless you've turned that off in Settings. New keys come back to the page, which shows a celebration. Achievements are never revoked, even if you delete the workout that earned them.
 
+## Navigation speed
+
+Every page is rendered on the server per request, so the tab bar is tuned to never wait on it:
+
+- The five tabs are **fully prefetched** (`prefetch` on the tab bar's links), so a tap shows the real page from the client cache. `experimental.staleTimes` keeps that for 60s (30s for pages you've visited). Every server action calls `revalidatePath("/", "layout")`, which clears the cache, so your own changes are never stale.
+- `app/(app)/loading.tsx` is a skeleton shown when a tab's prefetch hasn't arrived yet (slow network, first seconds after opening). It also lets Next prefetch each route's shell.
+- The tab bar moves its pill on tap (`onNavigate`), before the new page lands.
+
+Navigating within one section (e.g. Train → a workout) keeps the old page on screen until the new one arrives; give that segment its own `loading.tsx` if it ever feels slow.
+
 ## Workout logging and offline
 
 - The draft (`lib/workout-draft.ts`) is stored in `localStorage` on every keystroke, keyed per user (and per workout when editing). Inputs are kept as typed strings in your unit and converted only on save.
