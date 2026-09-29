@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Keep pages in the client cache briefly so switching back to a tab is instant. Every server action
+    // calls revalidatePath("/", "layout"), which clears this cache, so your own changes show straight away.
+    staleTimes: { dynamic: 30, static: 60 },
+  },
   async headers() {
     return [
       {
