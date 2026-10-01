@@ -14,12 +14,15 @@ import {
   computePRs,
   distanceUnitLabel,
   emptySet,
+  fillBlanks,
   hasInput,
   isLoggable,
+  lacksDistance,
   newKey,
   parseSet,
   previousHint,
   toInputs,
+  unreadableInput,
   type DraftExercise,
   type DraftSet,
   type ExerciseSnapshot,
@@ -183,24 +186,16 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
       return;
     }
 
-    let next: DraftSet = set;
-    if (!isLoggable(ex.exercise.kind, set, unit)) {
-      // Ticking an incomplete set fills the blanks from the previous set in this session, else from
-      // the same set last time (what the placeholders show), else the routine's target reps.
-      const prevInSession = ex.sets.slice(0, setIndex).findLast((s) => hasInput(s));
-      const lastTime = snapshots[ex.exercise.id]?.lastSets[setIndex] ?? snapshots[ex.exercise.id]?.lastSets.at(-1);
-      const source = prevInSession ?? (lastTime ? toInputs(lastTime, unit) : { weight: "", reps: ex.targetReps ? String(ex.targetReps) : "", duration: "", distance: "" });
-      next = {
-        ...set,
-        weight: set.weight || source.weight,
-        reps: set.reps || source.reps,
-        duration: set.duration || source.duration,
-        distance: set.distance || source.distance,
-      };
-      if (!isLoggable(ex.exercise.kind, next, unit)) {
-        setError(ex.exercise.kind === "weight_reps" ? "Enter the weight and reps first." : "Enter this set's numbers first.");
-        return;
-      }
+    // Ticking fills the blanks from the previous set in this session, else from the same set last
+    // time (what the placeholders show), else the routine's target reps.
+    const prevInSession = ex.sets.slice(0, setIndex).findLast((s) => hasInput(s));
+    const lastTime = snapshots[ex.exercise.id]?.lastSets[setIndex] ?? snapshots[ex.exercise.id]?.lastSets.at(-1);
+    const source = prevInSession ?? (lastTime ? toInputs(lastTime, unit) : { weight: "", reps: ex.targetReps ? String(ex.targetReps) : "", duration: "", distance: "" });
+    const next: DraftSet = fillBlanks(ex.exercise.kind, set, source, unit);
+    const unreadable = unreadableInput(ex.exercise.kind, next, unit);
+    if (unreadable || !isLoggable(ex.exercise.kind, next, unit)) {
+      setError(unreadable ?? (ex.exercise.kind === "weight_reps" ? "Enter the weight and reps first." : "Enter this set's numbers first."));
+      return;
     }
     setError(null);
     updateExercise(ex.key, (e) => ({ ...e, sets: e.sets.map((s, i) => (i === setIndex ? { ...next, done: true } : s)) }));
@@ -255,10 +250,33 @@ export function WorkoutLogger({ userId, unit, exercises: initialExercises, initi
   }, [draft, upload]);
 
   function finish() {
+    // Sets are saved whether or not they're ticked, so check what can't be read before anything else.
+    for (const e of draft.exercises) {
+      const unreadable = e.sets.map((s) => unreadableInput(e.exercise.kind, s, unit)).find(Boolean);
+      if (unreadable) {
+        setError(`${e.exercise.name}: ${unreadable}`);
+        return;
+      }
+    }
     const loggable = draft.exercises.reduce((n, e) => n + e.sets.filter((s) => isLoggable(e.exercise.kind, s, unit)).length, 0);
     if (loggable === 0 && !window.confirm("No sets logged. Save this as a gym visit anyway?")) return;
     const unticked = draft.exercises.reduce((n, e) => n + e.sets.filter((s) => !s.done && hasInput(s) && isLoggable(e.exercise.kind, s, unit)).length, 0);
     if (unticked > 0 && !window.confirm(`${unticked} set${unticked === 1 ? " has" : "s have"} numbers but aren't ticked. They'll be saved too. Finish?`)) return;
+    // Only for exercises you usually log a distance for: an elliptical session is often time only.
+    const noDistance = [
+      ...new Set(
+        draft.exercises
+          .filter((e) => snapshots[e.exercise.id]?.bests.distance_m != null && e.sets.some((s) => lacksDistance(e.exercise.kind, s, unit)))
+          .map((e) => e.exercise.name),
+      ),
+    ];
+    if (
+      noDistance.length > 0 &&
+      !window.confirm(
+        `${noDistance.join(", ")} ${noDistance.length === 1 ? "has" : "have"} a time but no distance, so ${noDistance.length === 1 ? "it won't" : "they won't"} count toward distance challenges. Finish anyway?`,
+      )
+    )
+      return;
     const next = { ...draft, endedAt: draft.mode === "new" ? new Date().toISOString() : draft.endedAt, pendingSync: true };
     setDraft(next);
     void upload(next);
