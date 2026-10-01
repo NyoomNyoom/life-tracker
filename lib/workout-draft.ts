@@ -106,6 +106,46 @@ export function isLoggable(kind: ExerciseKind, set: DraftSet, unit: Unit): boole
   return isSetComplete(kind, parseSet(set, unit));
 }
 
+type SetInputs = Pick<DraftSet, "weight" | "reps" | "duration" | "distance">;
+
+/**
+ * The set as saved when ticked: blanks are filled from `source` (the previous set in this session,
+ * else the same set last time, which is what the placeholders show) when the set can't be saved as
+ * typed. Cardio fills a blank distance or time even when the other was typed, because a time alone
+ * is saveable and the greyed-out distance would otherwise be dropped (and not count toward challenges).
+ */
+export function fillBlanks(kind: ExerciseKind, set: DraftSet, source: SetInputs, unit: Unit): DraftSet {
+  const needsFill = kind === "distance_time" ? !set.distance.trim() || !set.duration.trim() : !isLoggable(kind, set, unit);
+  if (!needsFill) return set;
+  const pick = (typed: string, fallback: string) => (typed.trim() ? typed : fallback);
+  return {
+    ...set,
+    weight: pick(set.weight, source.weight),
+    reps: pick(set.reps, source.reps),
+    duration: pick(set.duration, source.duration),
+    distance: pick(set.distance, source.distance),
+  };
+}
+
+/** Why a typed distance or time can't be read (it would be saved as blank), or null if it's fine. */
+export function unreadableInput(kind: ExerciseKind, set: DraftSet, unit: Unit): string | null {
+  const values = parseSet(set, unit);
+  if (kind === "distance_time" && set.distance.trim() && values.distance_m == null) {
+    return `Enter the distance as a number of ${unit === "kg" ? "kilometres" : "miles"}, like 2.5.`;
+  }
+  if ((kind === "duration" || kind === "distance_time") && set.duration.trim() && values.duration_seconds == null) {
+    return "Enter the time as minutes:seconds, like 25:00.";
+  }
+  return null;
+}
+
+/** A cardio set that will save with a time but no distance, so it won't count toward distance challenges. */
+export function lacksDistance(kind: ExerciseKind, set: DraftSet, unit: Unit): boolean {
+  if (kind !== "distance_time") return false;
+  const values = parseSet(set, unit);
+  return (values.distance_m ?? 0) <= 0 && (values.duration_seconds ?? 0) > 0;
+}
+
 /**
  * Which sets are personal records, compared against history and the sets before them in this
  * session (so repeating a PR weight on the next set doesn't count twice). Warm-ups never count.
